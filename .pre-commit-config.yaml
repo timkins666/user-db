@@ -1,0 +1,46 @@
+default_language_version:
+  python: python3.13
+
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v6.0.0
+  hooks:
+  - id: check-yaml
+    exclude: docker-compose
+  - id: end-of-file-fixer
+  - id: trailing-whitespace
+  - id: mixed-line-ending
+- repo: https://github.com/psf/black
+  rev: 25.1.0
+  hooks:
+  - id: black
+- repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+  rev: v2.15.0
+  hooks:
+  - id: pretty-format-yaml
+    args: [--autofix, --indent, '2']
+- repo: https://github.com/hadolint/hadolint
+  rev: v2.12.0
+  hooks:
+  - id: hadolint-docker
+- repo: local
+  hooks:
+  - id: eslint
+    name: ESLint
+    entry: npx eslint
+    language: system
+    args: [--no-warn-ignored, --config, ./frontend/eslint.config.js, --fix, ./frontend/.]
+    exclude: .json|backend|coverage
+    require_serial: true
+- repo: https://github.com/shellcheck-py/shellcheck-py
+  rev: v0.9.0.5
+  hooks:
+  - id: shellcheck
+- repo: local
+  hooks:
+  - id: pylint
+    name: pylint
+    entry: ./backend/.venv/bin/pylint
+    language: system
+    types: [python]
+    args: [--ignore-patterns=venv]

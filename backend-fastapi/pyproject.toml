@@ -1,0 +1,30 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "userdb Users CRD backend"
+readme = "README.md"
+authors = [
+    { name = "Tim Yates", email = "timyates100@gmail.com" }
+]
+requires-python = ">=3.13"
+
+dependencies = [
+    "fastapi[standard]>=0.116.1",
+    "humps>=0.2.2",
+    "psycopg2-binary>=2.9.10",
+    "sqlmodel>=0.0.24",
+]
+
+[dependency-groups]
+dev = [
+    "pylint>=3.3.8",
+]
+test = [
+    "httpx>=0.28.1",
+    "pytest>=8.4.2",
+]
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "./src", "."
+]
