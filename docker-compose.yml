@@ -14,9 +14,9 @@ services:
       interval: 3s
       timeout: 3s
       retries: 10
-  backend-fastapi:
+  backend:
     build:
-      context: ./backend-fastapi
+      context: ./backend
     depends_on:
       postgres:
         condition: service_healthy
@@ -28,9 +28,29 @@ services:
       POSTGRES_DB: tmc
       POSTGRES_HOST: postgres:5432
       # REFRESH_DB: true # uncomment to delete all users on startup
+  backend-dotnet:
+    build:
+      context: ./backend-dotnet
+      target: dev
+    # depends_on:
+    #   postgres:
+    #     condition: service_healthy
+    volumes:
+      - ./backend-dotnet/api:/src/api
+      - ./backend-dotnet/api/obj:/src/api/obj:delegated
+      - ./backend-dotnet/api/bin:/src/api/bin:delegated
+    ports:
+      - 5254:8080
+      - 5000:5000
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgresP
+      POSTGRES_DB: tmc
+      POSTGRES_HOST: postgres:5432
+      # REFRESH_DB: true # uncomment to delete all users on startup
   frontend:
     depends_on:
-    - backend-fastapi
+    - backend
     build:
       context: ./frontend
     ports:
