@@ -1,6 +1,4 @@
-# User Management
-
-A simple app to view, add and delete users.
+# A little WIP project for implementing and comparing different backends
 
 ## Usage
 
@@ -9,19 +7,31 @@ Run `docker-compose up -d` from the project root to start all containers, then h
 
 ### Components
 
-#### Backend
+#### Backends
 
-FastAPI web server running on `localhost:8000` providing a basic API for getting, creating and deleting users.
-
-It uses [uv](https://docs.astral.sh/uv/) for package management because it is great.
-
-Spool it up then see http://localhost:8000/docs for API details.
+Any implemented backends provide a basic API for getting, creating and deleting users, along with unit tests.
 
 Model validation imposes certain criteria when creating users:
 - users must be at least 16 years old and born on or after 01/01/1990.
 - `firstname` and `lastname` must be between 1 and 100 chars long, and can only contain letters, hypens and spaces.
 
 Deleting a user is a soft delete operation so as not to break relationships if more tables are added.
+
+WIP things:
+- Go backend
+- Frontend toggle for which backend to use
+
+##### FastAPI
+
+FastAPI web server running on `localhost:8000`.
+
+It uses [uv](https://docs.astral.sh/uv/) for package management because it is great.
+
+Spool it up then see http://localhost:8000/docs for API details.
+
+##### .NET
+
+Hot reload mode runs on `localhost:5000`
 
 #### Frontend
 
@@ -47,9 +57,15 @@ Once everything is installed you can run the frontend and backend directly (with
 
 #### Backend
 
-The backend tests use Pytest and an in-memory SQLite database to not interfere with users you've created in Postgres.
+All backend tests use an in-memory SQLite database to not interfere with users you've created in Postgres.
 
-Run `uv run pytest` from `/backend`.
+##### Python
+
+Python backend tests use Pytest, run `uv run pytest` from the `backend-fastapi` folder.
+
+##### .NET
+
+.NET tests are built in xUnit, run `dotnet test` from `backend-dotnet`
 
 #### Frontend
 
