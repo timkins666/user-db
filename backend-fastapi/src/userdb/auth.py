@@ -8,7 +8,7 @@ from fastapi import HTTPException
 import jwt
 
 REFRESH_TOKEN_EXPIRE_SECONDS = 60 * 3
-ACCESS_TOKEN_EXPIRE_MINUTES = 1
+ACCESS_TOKEN_EXPIRE_MINUTES = 5
 JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "dev-secret")
 JWT_ALGORITHM = "HS256"
 CLAIM_TYPE_ACCESS = "access"
