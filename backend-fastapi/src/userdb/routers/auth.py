@@ -1,16 +1,53 @@
 """auth http handlers"""
 
+import json
+import os
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Body, Cookie, HTTPException, Response
+from redis import Redis
 from userdb import auth
 from userdb.utils import log
 
 _logger = log.get_logger(__name__)
 
+
 router = APIRouter(prefix="/auth")
 
-mock_refresh_tokens: dict[str, dict] = {}
+_redis_client: Redis | None = None
+
+
+def _redis_key(refresh_token: str) -> str:
+    return f"refresh_token:{refresh_token}"
+
+
+def get_redis() -> Redis:
+    global _redis_client
+    if _redis_client is None:
+        host = os.environ.get("REDIS_HOST", "redis")
+        port = int(os.environ.get("REDIS_PORT", "6379"))
+        db = int(os.environ.get("REDIS_DB", "0"))
+        _redis_client = Redis(
+            host=host,
+            port=port,
+            db=db,
+            decode_responses=True,
+        )
+    return _redis_client
+
+
+_GETDEL_LUA = """
+local v = redis.call('GET', KEYS[1])
+if v then
+  redis.call('DEL', KEYS[1])
+end
+return v
+""".strip()
+
+
+def _redis_getdel(client: Redis, key: str) -> str | None:
+    # Use Lua for atomic get+delete across Redis versions.
+    return client.eval(_GETDEL_LUA, 1, key)
 
 
 def _set_refresh_cookie(
@@ -44,11 +81,15 @@ def login(
 
     refresh_token = auth.create_refresh_token(user_id=username)
 
-    # pretend it's in a db
-    mock_refresh_tokens[refresh_token] = {
+    token_info = {
         "user": username,
-        "created_at": datetime.now(timezone.utc),
+        "created_at": datetime.now(timezone.utc).isoformat(),
     }
+    get_redis().set(
+        _redis_key(refresh_token),
+        json.dumps(token_info),
+        ex=auth.REFRESH_TOKEN_EXPIRE_SECONDS,
+    )
 
     from fastapi.responses import JSONResponse
 
@@ -64,9 +105,15 @@ def refresh(refresh_token: str | None = Cookie(default=None), *, response: Respo
     if not refresh_token:
         raise HTTPException(status_code=401, detail="Missing cookie")
 
-    token_info = mock_refresh_tokens.pop(refresh_token, None)
-    if not token_info:
+    client = get_redis()
+    token_info_raw = _redis_getdel(client, _redis_key(refresh_token))
+    if not token_info_raw:
         raise HTTPException(status_code=401, detail="Token doesn't exist")
+
+    try:
+        token_info = json.loads(token_info_raw)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
     if token_info.get("revoked"):
         raise HTTPException(status_code=401, detail="Token revoked")
@@ -77,11 +124,15 @@ def refresh(refresh_token: str | None = Cookie(default=None), *, response: Respo
     new_token = auth.create_refresh_token(user_id=username)
     _set_refresh_cookie(response, new_token)
 
-    # set in fake db
-    mock_refresh_tokens[new_token] = {
+    new_token_info = {
         "user": username,
-        "created_at": datetime.now(timezone.utc),
+        "created_at": datetime.now(timezone.utc).isoformat(),
     }
+    client.set(
+        _redis_key(new_token),
+        json.dumps(new_token_info),
+        ex=auth.REFRESH_TOKEN_EXPIRE_SECONDS,
+    )
 
     access_token = auth.create_access_token(subject=username)
     return {"access_token": access_token, "token_type": "bearer"}

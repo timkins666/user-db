@@ -3,9 +3,7 @@ name = "backend-fastapi"
 version = "0.1.0"
 description = "userdb FastAPI backend"
 readme = "README.md"
-authors = [
-    { name = "Tim Yates", email = "timyates100@gmail.com" }
-]
+authors = [{ name = "Tim Yates", email = "timyates100@gmail.com" }]
 requires-python = ">=3.13"
 
 dependencies = [
@@ -13,19 +11,13 @@ dependencies = [
     "humps>=0.2.2",
     "psycopg2-binary>=2.9.10",
     "pyjwt>=2.10.1",
+    "redis>=7.1.0",
     "sqlmodel>=0.0.24",
 ]
 
 [dependency-groups]
-dev = [
-    "pylint>=3.3.8",
-]
-test = [
-    "httpx>=0.28.1",
-    "pytest>=8.4.2",
-]
+dev = ["pylint>=3.3.8"]
+test = ["httpx>=0.28.1", "pytest>=8.4.2"]
 
 [tool.pytest.ini_options]
-pythonpath = [
-  "./src", "."
-]
+pythonpath = ["./src", "."]
