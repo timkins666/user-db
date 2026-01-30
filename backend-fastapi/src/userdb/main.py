@@ -1,11 +1,13 @@
 """initialise the FastAPI app"""
 
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from userdb import db
-from userdb.routers import users
+from userdb.routers import auth, users
+from userdb.middleware import jwt_auth_middleware
 
 
 @asynccontextmanager
@@ -16,6 +18,9 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+# Register JWT auth middleware
+app.middleware("http")(jwt_auth_middleware)
 
 origins = [
     "http://localhost:5173",
@@ -29,6 +34,7 @@ app.add_middleware(
 )
 
 app.include_router(users.router)
+app.include_router(auth.router)
 
 
 @app.get("/", status_code=200)

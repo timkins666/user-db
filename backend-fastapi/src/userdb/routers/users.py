@@ -2,7 +2,7 @@
 
 from typing import Annotated
 import uuid
-from fastapi import APIRouter, Body, Path, status
+from fastapi import APIRouter, Body, Path, Request, status
 from sqlmodel import select
 
 from userdb.db import SessionDep
@@ -16,9 +16,12 @@ router = APIRouter()
     response_model=list[UserPublic],
     summary="Return all users from the database",
 )
-async def get_all_users(session: SessionDep):
+async def get_all_users(session: SessionDep, *, request: Request):
     """get all non-deleted users"""
     # pylint: disable=singleton-comparison
+
+    print("Request made by user:", request.state.user)
+
     return session.exec(select(User).where(User.deleted == False)).all()
 
 

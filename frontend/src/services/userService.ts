@@ -1,12 +1,11 @@
 import dayjs from 'dayjs';
+import { api } from './api';
 import type { NewUser, User } from '../types/user';
-
-const API_BASE = 'http://localhost:8000';
 
 export const userService = {
   async getUsers(): Promise<User[]> {
-    const response = await fetch(`${API_BASE}/users`);
-    const users: User[] = await response.json();
+    const resp = await api.get('/users');
+    const users: User[] = resp.data;
     return users.map((user: User) => ({
       ...user,
       dateOfBirth: dayjs(user.dateOfBirth),
@@ -15,30 +14,26 @@ export const userService = {
   },
 
   async createUser(userData: NewUser): Promise<User | null> {
-    const response = await fetch(`${API_BASE}/users/create`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    try {
+      const resp = await api.post('/users/create', {
         user: {
           ...userData,
           dateOfBirth: userData.dateOfBirth?.format('YYYY-MM-DD'),
         },
-      }),
-    });
+      });
 
-    if (!response.ok) {
+      const newUser: User = resp.data;
+      return {
+        ...newUser,
+        dateOfBirth: dayjs(newUser.dateOfBirth),
+        age: dayjs().diff(userData.dateOfBirth, 'day'),
+      };
+    } catch (err) {
       return null;
     }
-
-    const newUser: User = await response.json();
-    return {
-      ...newUser,
-      dateOfBirth: dayjs(newUser.dateOfBirth),
-      age: dayjs().diff(userData.dateOfBirth, 'day'),
-    };
   },
 
   async deleteUser(id: string): Promise<void> {
-    await fetch(`${API_BASE}/user/${id}`, { method: 'DELETE' });
+    await api.delete(`/user/${id}`);
   },
 };

@@ -1,10 +1,21 @@
 import MockDate from 'mockdate';
 import dayjs from 'dayjs';
-import { userService } from '../../services/userService';
+import axios from 'axios';
 import type { NewUser } from '../../types/user';
 
-// Mock fetch
-global.fetch = jest.fn();
+jest.mock('axios');
+
+const mockedAxios = axios as jest.Mocked<any>;
+const apiInstance = {
+  get: jest.fn(),
+  post: jest.fn(),
+  delete: jest.fn(),
+  interceptors: { request: { use: jest.fn() } },
+};
+
+mockedAxios.create.mockReturnValue(apiInstance);
+
+import { userService } from '../../services/userService';
 
 describe('userService', () => {
   beforeEach(() => {
@@ -28,13 +39,11 @@ describe('userService', () => {
       },
     ];
 
-    (fetch as jest.Mock).mockResolvedValueOnce({
-      json: () => Promise.resolve(mockUsers),
-    });
+    apiInstance.get.mockResolvedValueOnce({ data: mockUsers });
 
     const result = await userService.getUsers();
 
-    expect(fetch).toHaveBeenCalledWith('http://localhost:8000/users');
+    expect(apiInstance.get).toHaveBeenCalledWith('/users');
     expect(result).toEqual([
       { ...mockUsers[0], dateOfBirth: dayjs('1990-01-01') },
     ]);
@@ -49,19 +58,14 @@ describe('userService', () => {
       dateOfBirth: dayjs('1990-01-01'),
     };
     const mockResponse = { ...userData, id: '1' };
-    (fetch as jest.Mock).mockResolvedValueOnce({
-      json: () => Promise.resolve(mockResponse),
-      ok: true,
-    });
+    apiInstance.post.mockResolvedValueOnce({ data: mockResponse });
 
     const result = await userService.createUser(userData);
 
-    expect(fetch).toHaveBeenCalledWith('http://localhost:8000/users/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user: {...userData, dateOfBirth: '1990-01-01' }}),
+    expect(apiInstance.post).toHaveBeenCalledWith('/users/create', {
+      user: { ...userData, dateOfBirth: '1990-01-01' },
     });
-    expect(result).toEqual({...mockResponse, age: 365});
+    expect(result).toEqual({ ...mockResponse, age: 365 });
   });
 
   test('createUser returns null for failed request', async () => {
@@ -70,9 +74,7 @@ describe('userService', () => {
       lastname: 'Doe',
       dateOfBirth: dayjs('1990-01-01'),
     };
-    (fetch as jest.Mock).mockResolvedValueOnce({
-      ok: false,
-    });
+    apiInstance.post.mockRejectedValueOnce(new Error('failed'));
 
     const result = await userService.createUser(userData);
 
@@ -80,12 +82,10 @@ describe('userService', () => {
   });
 
   test('deleteUser sends DELETE request', async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({});
+    apiInstance.delete.mockResolvedValueOnce({});
 
     await userService.deleteUser('1');
 
-    expect(fetch).toHaveBeenCalledWith('http://localhost:8000/user/1', {
-      method: 'DELETE',
-    });
+    expect(apiInstance.delete).toHaveBeenCalledWith('/user/1');
   });
 });

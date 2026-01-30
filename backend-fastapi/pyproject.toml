@@ -1,7 +1,7 @@
 [project]
-name = "backend"
+name = "backend-fastapi"
 version = "0.1.0"
-description = "userdb Users CRD backend"
+description = "userdb FastAPI backend"
 readme = "README.md"
 authors = [
     { name = "Tim Yates", email = "timyates100@gmail.com" }
@@ -12,6 +12,7 @@ dependencies = [
     "fastapi[standard]>=0.116.1",
     "humps>=0.2.2",
     "psycopg2-binary>=2.9.10",
+    "pyjwt>=2.10.1",
     "sqlmodel>=0.0.24",
 ]
 

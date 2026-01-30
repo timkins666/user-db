@@ -17,7 +17,7 @@ def db_url():
     user = os.getenv("POSTGRES_USER", "postgres")
     password = os.getenv("POSTGRES_PASSWORD", "postgresP")
     host = os.getenv("POSTGRES_HOST", "localhost:5432")
-    db_name = os.getenv("POSTGRES_DB", "userdb")
+    db_name = os.getenv("POSTGRES_DB", "users")
     return f"postgresql://{user}:{password}@{host}/{db_name}"
 
 

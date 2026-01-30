@@ -54,7 +54,7 @@ Once everything is installed you can run the frontend and backend directly (with
 
 - start the postgres container with `docker-compose up -d postgres` from the project root so the backend has something to talk to
 - if you don't already have `uv` installed globally on your system you'll need to activate the backend venv with `source ./backend/.venv/bin/activate`
-- with `backend` as your working directory, start the backend with `uv run fastapi dev src/tmc/main.py`
+- with `backend-fastapi` as your working directory, start the backend with `uv run fastapi dev src/userdb/main.py`
 - in a new terminal with `frontend` as your working directory, run `npm run dev`
 
 ### Unit tests

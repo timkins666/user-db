@@ -2,7 +2,7 @@ services:
   postgres:
     image: postgres:17.5
     environment:
-      POSTGRES_DB: tmc
+      POSTGRES_DB: users
       POSTGRES_PASSWORD: postgresP
     user: postgres
     ports:
@@ -14,18 +14,20 @@ services:
       interval: 3s
       timeout: 3s
       retries: 10
-  backend:
+  backend-fastapi:
     build:
-      context: ./backend-fastapi
+      dockerfile: ./backend-fastapi/Dockerfile
     depends_on:
       postgres:
         condition: service_healthy
     ports:
     - 8000:80
+    volumes:
+    - ./backend-fastapi/src:/app/backend-fastapi/src
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgresP
-      POSTGRES_DB: tmc
+      POSTGRES_DB: users
       POSTGRES_HOST: postgres:5432
       # REFRESH_DB: true # uncomment to delete all users on startup
   # backend-dotnet:
@@ -45,12 +47,12 @@ services:
   #   environment:
   #     POSTGRES_USER: postgres
   #     POSTGRES_PASSWORD: postgresP
-  #     POSTGRES_DB: tmc
+  #     POSTGRES_DB: users
   #     POSTGRES_HOST: postgres:5432
   #     # REFRESH_DB: true # uncomment to delete all users on startup
   frontend:
     depends_on:
-    - backend
+    - backend-fastapi
     build:
       context: ./frontend
     ports:

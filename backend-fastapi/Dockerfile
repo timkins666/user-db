@@ -6,8 +6,16 @@ ENV UV_PROJECT_ENVIRONMENT=/app/.venv
 
 COPY pyproject.toml uv.lock ./
 
-RUN uv sync --frozen --no-cache
+WORKDIR /app/backend-fastapi
 
-COPY ./src/. ./src/
+COPY backend-fastapi/pyproject.toml .
 
-CMD ["/app/.venv/bin/fastapi", "run", "./src/userdb/main.py", "--port", "80"]
+RUN uv sync
+
+COPY ./backend-fastapi/src/. ./src/
+
+ENV PYTHONPATH=/app/backend-fastapi/src
+
+EXPOSE 80
+
+CMD ["/app/.venv/bin/uvicorn", "userdb.main:app", "--host", "0.0.0.0", "--port", "80",  "--reload", "--reload-dir", "/app"]
