@@ -31,11 +31,11 @@ async def jwt_auth_middleware(request: Request, call_next: Callable):
     # Allow public paths
     for prefix in EXEMPT_PATH_PREFIXES:
         if path == prefix or path.startswith(prefix + "/"):
-            _logger.critical("JWT auth middleware skipping auth path: %s", path)
+            _logger.debug("JWT auth middleware skipping auth path: %s", path)
 
             return await call_next(request)
 
-    _logger.critical("JWT auth middleware checking path: %s", path)
+    _logger.debug("JWT auth middleware checking path: %s", path)
 
     # Allow preflight
     if request.method == "OPTIONS":

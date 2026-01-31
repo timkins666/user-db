@@ -8,7 +8,6 @@ import {
   Paper,
   IconButton,
   TableSortLabel,
-  Typography,
 } from '@mui/material';
 import { Cake, Delete } from '@mui/icons-material';
 import { type User } from '../types/user';
@@ -86,13 +85,17 @@ export const UserTable = ({
             const filteredUsers = users.filter(
               (user) =>
                 user.firstname.toLowerCase().includes(searchText) ||
-                user.lastname.toLowerCase().includes(searchText)
+                user.lastname.toLowerCase().includes(searchText),
             );
 
             if (filteredUsers.length === 0) {
               return (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 4, color: 'text.secondary' }}>
+                  <TableCell
+                    colSpan={5}
+                    align='center'
+                    sx={{ py: 4, color: 'text.secondary' }}
+                  >
                     No users found
                   </TableCell>
                 </TableRow>

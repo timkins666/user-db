@@ -16,7 +16,7 @@ import {
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
-import { MIN_USER_AGE } from '../types/constants';
+import { MIN_USER_AGE } from '../config/constants';
 
 interface CreateUserDialogProps {
   open: boolean;

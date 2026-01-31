@@ -1,5 +1,5 @@
 import dayjs, { type Dayjs } from 'dayjs';
-import { MIN_USER_AGE } from './constants';
+import { MIN_USER_AGE } from '../config/constants';
 
 export interface UserBase {
   firstname: string;

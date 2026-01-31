@@ -10,7 +10,7 @@ const apiInstance = {
   get: jest.fn(),
   post: jest.fn(),
   delete: jest.fn(),
-  interceptors: { request: { use: jest.fn() } },
+  interceptors: { request: { use: jest.fn() }, response: { use: jest.fn() } },
 };
 
 mockedAxios.create.mockReturnValue(apiInstance);
