@@ -1,1 +1,3 @@
-export const API_URL = "http://localhost:8000"; // import.meta.env.BACKEND_API_URL ||
+const _env = import.meta.env;
+
+export const API_URL = _env.VITE_BACKEND_FASTAPI_URL;
