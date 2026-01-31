@@ -3,6 +3,7 @@
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
+import uuid
 
 from fastapi import HTTPException
 import jwt
@@ -16,7 +17,7 @@ CLAIM_TYPE_ACCESS = "access"
 
 def create_refresh_token(user_id: str) -> str:
     """Create a dummy refresh token for the user."""
-    return f"refresh-token-for-{user_id}"
+    return f"refresh-{user_id}-{uuid.uuid4()}"
 
 
 def create_access_token(

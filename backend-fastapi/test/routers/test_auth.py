@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import time
 
 import pytest
@@ -44,7 +43,7 @@ def fake_redis(monkeypatch):
 
     r = FakeRedis()
     monkeypatch.setattr(auth_router, "get_redis", lambda: r)
-    return r
+    yield r
 
 
 def test_login_sets_cookie_and_returns_access_token(app, fake_redis):
@@ -95,5 +94,7 @@ def test_refresh_reuse_old_cookie_fails(app, fake_redis):
     consumed_cookie = login_resp.cookies.get("refresh_token")
     assert consumed_cookie
 
-    resp = app.post("/auth/refresh", cookies={"refresh_token": consumed_cookie})
+    app.cookies.set("refresh_token", consumed_cookie)
+
+    resp = app.post("/auth/refresh")
     assert resp.status_code == 401

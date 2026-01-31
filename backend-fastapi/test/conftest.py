@@ -5,6 +5,7 @@ import pytest
 from sqlmodel import Session, SQLModel, create_engine, delete
 from sqlmodel.pool import StaticPool
 
+from userdb import auth
 from userdb.db import get_session
 from userdb.main import app
 from userdb.models.user import User
@@ -53,3 +54,13 @@ def create_user(user: User, session: Session):
     session.commit()
     session.refresh(user)
     return user
+
+
+@pytest.fixture(name="username")
+def _username():
+    return "test-user"
+
+
+@pytest.fixture()
+def access_token(username):
+    return auth.create_access_token(subject=username)

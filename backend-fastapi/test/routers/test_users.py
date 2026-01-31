@@ -22,6 +22,11 @@ public_user_keys = {
 class TestUsersRouter:
     """test user handlers"""
 
+    @pytest.fixture(autouse=True)
+    def _set_auth_header(self, app: TestClient, access_token):
+        """sets the auth header on the app for all tests in this class"""
+        app.headers["Authorization"] = f"Bearer {access_token}"
+
     def new_user_data(self, **kwargs):
         """valid new user request data"""
         return {
@@ -52,6 +57,8 @@ class TestUsersRouter:
             )
 
         response = app.get("/users")
+
+        assert response.status_code == 200
 
         users = json.loads(response.text)
         assert [u["firstname"] for u in users] == ["user0", "user2"]
