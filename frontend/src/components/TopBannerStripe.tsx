@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AppBar, Box, Toolbar, Typography } from "@mui/material";
+import { AppBar, Box, Button, Toolbar, Typography } from "@mui/material";
 import { Person } from "@mui/icons-material";
 import { token, registerAccessTokenListener } from "../auth/authToken";
 import { parseJwtPayload } from "../auth/jwt";
@@ -15,8 +15,10 @@ function getUsernameFromToken(accessToken: string | null): string | null {
 
 export default function TopBannerStripe({
   children,
+  onLogout,
 }: {
   children: React.ReactNode;
+  onLogout?: () => void;
 }) {
   const [username, setUsername] = useState<string | null>(() =>
     getUsernameFromToken(token.getAccessToken()),
@@ -33,6 +35,11 @@ export default function TopBannerStripe({
     () => (username ? username.toLowerCase() : ""),
     [username],
   );
+
+  const handleLogout = () => {
+    token.setAccessToken(null);
+    onLogout?.();
+  };
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
@@ -53,6 +60,15 @@ export default function TopBannerStripe({
           >
             {usernameLower}
           </Typography>
+          <Button
+            onClick={handleLogout}
+            color="inherit"
+            size="small"
+            variant="text"
+            sx={{ ml: 1 }}
+          >
+            Logout
+          </Button>
         </Toolbar>
       </AppBar>
 

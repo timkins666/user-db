@@ -1,7 +1,7 @@
-import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
-import { token } from '../auth/authToken';
-import { refreshAccessToken } from '../auth/authApi';
-import { API_URL } from '../config/constants';
+import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
+import { token } from "../auth/authToken";
+import { refreshAccessToken } from "../auth/authApi";
+import { API_URL } from "../config/constants";
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
@@ -37,7 +37,7 @@ export const api = axios.create({
 
 // Attach access token on every request
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  if (config.url?.includes('/auth/')) {
+  if (config.url?.includes("/auth/")) {
     return config;
   }
 
@@ -56,9 +56,9 @@ api.interceptors.response.use(
 
     if (
       error.response?.status === 401 &&
-      originalRequest.url?.includes('/auth/')
+      originalRequest.url?.includes("/auth/")
     ) {
-      console.debug('auth error on auth request, not retrying');
+      console.debug("auth error on auth request, not retrying");
       return Promise.reject(error);
     }
 
@@ -67,17 +67,17 @@ api.interceptors.response.use(
 
       if (isRefreshing) {
         // Wait for in-flight refresh
-        console.debug('waiting for ongoing token refresh');
+        console.debug("waiting for ongoing token refresh");
         const newToken = await enqueueRefresh();
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        console.debug('token refreshed - retrying');
+        console.debug("token refreshed - retrying");
         return api(originalRequest);
       }
 
       isRefreshing = true;
 
       try {
-        console.debug('refreshing access token');
+        console.debug("refreshing access token");
 
         const newToken = await refreshAccessToken();
         resolveQueue(newToken);
@@ -86,10 +86,11 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (err) {
         rejectQueue(err);
-        console.debug('refresh failed, redirecting to login');
+        console.debug("refresh failed, redirecting to login");
         // refresh failed
         token.setAccessToken(null);
-        window.location.href = '/login';
+        alert("Session expired. Please log in again.");
+        window.location.href = "/login";
         return Promise.reject(err);
       } finally {
         isRefreshing = false;

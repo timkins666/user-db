@@ -30,7 +30,7 @@ function Root() {
   }
 
   return authenticated ? (
-    <TopBannerStripe>
+    <TopBannerStripe onLogout={() => setAuthenticated(false)}>
       <UserManagement />
     </TopBannerStripe>
   ) : (

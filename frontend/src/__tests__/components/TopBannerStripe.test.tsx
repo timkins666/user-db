@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import TopBannerStripe from "../../components/TopBannerStripe";
 import { token } from "../../auth/authToken";
 
@@ -32,5 +32,11 @@ describe("TopBannerStripe", () => {
     expect(screen.getByTestId("top-banner-username")).toHaveTextContent(
       "alice",
     );
+
+    const logout = screen.getByRole("button", { name: /logout/i });
+    fireEvent.click(logout);
+
+    expect(token.getAccessToken()).toBe(null);
+    expect(screen.getByTestId("top-banner-username")).toHaveTextContent("");
   });
 });

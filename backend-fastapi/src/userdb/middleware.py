@@ -4,6 +4,7 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 
 from userdb import auth
+from userdb.redis import is_access_token_revoked
 from userdb.utils import log
 
 
@@ -49,6 +50,12 @@ async def jwt_auth_middleware(request: Request, call_next: Callable):
         )
 
     token = auth_header.split(" ", 1)[1].strip()
+
+    if is_access_token_revoked(token):
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Token revoked"},
+        )
 
     try:
         payload = auth.verify_access_token(token)
