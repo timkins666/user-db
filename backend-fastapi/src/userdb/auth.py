@@ -28,7 +28,7 @@ def create_access_token(
     now = datetime.now(timezone.utc)
 
     payload: dict[str, Any] = {
-        "sub": subject,
+        "sub": subject.lower(),
         "iat": now,
         "exp": now + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
         "type": CLAIM_TYPE_ACCESS,

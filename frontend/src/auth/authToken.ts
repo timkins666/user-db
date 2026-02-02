@@ -22,4 +22,11 @@ export function registerAccessTokenListener(
   listener: (token: string | null) => void,
 ) {
   listeners.push(listener);
+
+  return () => {
+    const idx = listeners.indexOf(listener);
+    if (idx >= 0) {
+      listeners.splice(idx, 1);
+    }
+  };
 }

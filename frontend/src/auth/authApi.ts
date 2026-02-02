@@ -1,31 +1,9 @@
-import axios from 'axios';
-import { registerAccessTokenListener, token } from './authToken';
+import axios from "axios";
+import { registerAccessTokenListener, token } from "./authToken";
+import { parseJwtPayload } from "./jwt";
 
 const REFRESH_BUFFER_SECONDS = 60;
 let refreshTimeoutId: number | null = null;
-
-function base64UrlDecode(input: string): string {
-  // base64url -> base64
-  let str = input.replace(/-/g, '+').replace(/_/g, '/');
-  const pad = str.length % 4;
-  if (pad) {
-    str += '='.repeat(4 - pad);
-  }
-  return atob(str);
-}
-
-function parseJwtPayload(jwt: string): any | null {
-  try {
-    const parts = jwt.split('.');
-    if (parts.length !== 3) {
-      return null;
-    }
-    const payload = base64UrlDecode(parts[1]);
-    return JSON.parse(payload);
-  } catch {
-    return null;
-  }
-}
 
 export function scheduleRefreshForToken(accessToken: string | null) {
   if (refreshTimeoutId !== null) {
@@ -55,7 +33,7 @@ export function scheduleRefreshForToken(accessToken: string | null) {
   }
 
   refreshTimeoutId = window.setTimeout(() => {
-    console.info('proactively refreshing access token');
+    console.info("proactively refreshing access token");
     void refreshAccessToken().catch(() => {
       // ignore; request layer can handle auth failures
     });
@@ -69,7 +47,7 @@ registerAccessTokenListener((t) => {
 
 export async function refreshAccessToken(): Promise<string> {
   const res = await axios.post(
-    '/auth/refresh',
+    "/auth/refresh",
     {},
     {
       withCredentials: true,

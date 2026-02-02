@@ -1,8 +1,9 @@
-import { StrictMode, useEffect, useRef, useState } from 'react';
-import { createRoot } from 'react-dom/client';
-import App from './UserManagement.tsx';
-import Login from './Login';
-import { refreshAccessToken } from './auth/authApi';
+import { StrictMode, useEffect, useRef, useState } from "react";
+import { createRoot } from "react-dom/client";
+import UserManagement from "./UserManagement.tsx";
+import Login from "./Login";
+import { refreshAccessToken } from "./auth/authApi";
+import TopBannerStripe from "./components/TopBannerStripe";
 
 function Root() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
@@ -29,13 +30,15 @@ function Root() {
   }
 
   return authenticated ? (
-    <App />
+    <TopBannerStripe>
+      <UserManagement />
+    </TopBannerStripe>
   ) : (
     <Login onLogin={() => setAuthenticated(true)} />
   );
 }
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <Root />
   </StrictMode>,

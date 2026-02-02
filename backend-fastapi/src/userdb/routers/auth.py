@@ -5,6 +5,8 @@ import os
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Body, Cookie, HTTPException, Response
+from fastapi.responses import JSONResponse
+
 from redis import Redis
 from userdb import auth
 from userdb.utils import log
@@ -50,6 +52,10 @@ def _redis_getdel(client: Redis, key: str) -> str | None:
     return client.eval(_GETDEL_LUA, 1, key)
 
 
+def _access_token_response(access_token: str) -> JSONResponse:
+    return JSONResponse({"access_token": access_token, "token_type": "bearer"})
+
+
 def _set_refresh_cookie(
     response: Response,
     refresh_token: str,
@@ -82,7 +88,7 @@ def login(
     refresh_token = auth.create_refresh_token(user_id=username)
 
     token_info = {
-        "user": username,
+        "user": username.lower(),
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     get_redis().set(
@@ -91,11 +97,9 @@ def login(
         ex=auth.REFRESH_TOKEN_EXPIRE_SECONDS,
     )
 
-    from fastapi.responses import JSONResponse
-
     access_token = auth.create_access_token(subject=username)
 
-    resp = JSONResponse({"access_token": access_token, "token_type": "bearer"})
+    resp = _access_token_response(access_token)
     _set_refresh_cookie(resp, refresh_token)
     return resp
 
@@ -103,24 +107,24 @@ def login(
 @router.post("/refresh")
 def refresh(refresh_token: str | None = Cookie(default=None), *, response: Response):
     if not refresh_token:
-        raise HTTPException(status_code=401, detail="Missing cookie")
+        raise HTTPException(status_code=401)
 
     client = get_redis()
     token_info_raw = _redis_getdel(client, _redis_key(refresh_token))
     if not token_info_raw:
-        raise HTTPException(status_code=401, detail="Token doesn't exist")
+        raise HTTPException(status_code=401)
 
     try:
         token_info = json.loads(token_info_raw)
     except Exception:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401)
 
     if token_info.get("revoked"):
-        raise HTTPException(status_code=401, detail="Token revoked")
+        raise HTTPException(status_code=401)
 
     username = token_info.get("user")
     if not username:
-        raise HTTPException(status_code=401, detail="Missing user in token info")
+        raise HTTPException(status_code=401)
     new_token = auth.create_refresh_token(user_id=username)
     _set_refresh_cookie(response, new_token)
 
@@ -135,4 +139,4 @@ def refresh(refresh_token: str | None = Cookie(default=None), *, response: Respo
     )
 
     access_token = auth.create_access_token(subject=username)
-    return {"access_token": access_token, "token_type": "bearer"}
+    return _access_token_response(access_token)
