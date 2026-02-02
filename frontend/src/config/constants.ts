@@ -1,12 +1,13 @@
+// Prefer Vite's `import.meta.env` when available so Vite can statically replace
+// `import.meta.env` with the environment object at build/dev time. Fall back
+// to `process.env` for Node/Jest environments where `import.meta.env` isn't
+// available.
 let _env: any = {};
-try {
-  // Attempt to read `import.meta.env` in environments where it's available (Vite).
-  // Use the Function constructor so the token `import.meta` doesn't appear directly
-  // in the module source, avoiding syntax errors in Node/Jest.
-  // If this fails (e.g., tests running in Node), fall back to `process.env`.
 
-  _env = Function('return import.meta.env')();
-} catch {
+if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
+  // Keep the direct `import.meta.env` access so Vite's static replacement works.
+  _env = (import.meta as any).env;
+} else {
   _env = typeof process !== 'undefined' ? (process.env as any) : {};
 }
 
