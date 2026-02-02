@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AppBar, Box, Button, Toolbar, Typography } from '@mui/material';
-import { Person } from '@mui/icons-material';
+import {
+  AppBar,
+  Box,
+  IconButton,
+  Toolbar,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import { Logout, Person } from '@mui/icons-material';
 import { token, registerAccessTokenListener } from '../auth/authToken';
 import { parseJwtPayload } from '../auth/jwt';
 
@@ -60,15 +67,17 @@ export default function TopBannerStripe({
           >
             {usernameLower}
           </Typography>
-          <Button
-            onClick={handleLogout}
-            color="inherit"
-            size="small"
-            variant="text"
-            sx={{ ml: 1 }}
-          >
-            Logout
-          </Button>
+          <Tooltip title="Logout">
+            <IconButton
+              onClick={handleLogout}
+              color="inherit"
+              size="small"
+              aria-label="logout"
+              sx={{ ml: 3 }}
+            >
+              <Logout fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Toolbar>
       </AppBar>
 
