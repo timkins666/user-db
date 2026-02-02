@@ -49,14 +49,26 @@ export default function TopBannerStripe({
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      <AppBar position="static" elevation={0} sx={{ bgcolor: 'primary.main' }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+      }}
+    >
+      <AppBar position="static" elevation={0}>
         <Toolbar
+          variant="dense"
           sx={{
-            minHeight: 44,
+            minHeight: { xs: 40, sm: 40 },
             display: 'flex',
             justifyContent: 'flex-end',
             gap: 1,
+            px: 1.5,
+            py: 0,
+            backdropFilter: 'blur(10px)',
+            '& .MuiIconButton-root': {
+              p: 0.5,
+            },
           }}
         >
           <Person fontSize="small" />

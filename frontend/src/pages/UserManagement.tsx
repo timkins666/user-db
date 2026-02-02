@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  Box,
   Container,
   Typography,
   Button,
@@ -47,16 +48,33 @@ function UserManagement() {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography variant="h4" sx={{ mb: 4 }}>
-        User Management
+    <Container maxWidth="lg" sx={{ py: 5 }}>
+      <Typography
+        variant="h4"
+        sx={{
+          mb: 4,
+          color: 'text.secondary',
+          letterSpacing: '-0.02em',
+          position: 'relative',
+          display: 'inline-block',
+          pb: 1,
+        }}
+      >
+        User management
       </Typography>
 
-      <div
-        style={{
+      <Box
+        sx={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          p: 3,
+          mb: 3,
+          borderRadius: 1,
+          bgcolor: 'background.paper',
+          boxShadow: 2,
+          border: '1px solid',
+          borderColor: 'grey.100',
         }}
       >
         <OutlinedInput
@@ -73,13 +91,21 @@ function UserManagement() {
         />
 
         <Button
-          variant="outlined"
+          variant="contained"
           startIcon={<Add />}
           onClick={() => setShowCreateModal(true)}
+          sx={{
+            boxShadow: 3,
+            '&:hover': {
+              boxShadow: 5,
+              transform: 'translateY(-2px)',
+            },
+            transition: 'all 0.2s ease-in-out',
+          }}
         >
           Create New User
         </Button>
-      </div>
+      </Box>
 
       <UserTable
         users={sortedUsers}

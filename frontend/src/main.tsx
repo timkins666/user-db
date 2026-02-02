@@ -1,9 +1,11 @@
 import { StrictMode, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { ThemeProvider, CssBaseline } from '@mui/material';
 import UserManagement from './pages/UserManagement';
 import Login from './pages/Login';
 import { refreshAccessToken } from './auth/authApi';
 import TopBannerStripe from './components/TopBannerStripe';
+import { theme } from './theme/theme';
 
 function Root() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
@@ -40,6 +42,9 @@ function Root() {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Root />
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Root />
+    </ThemeProvider>
   </StrictMode>,
 );

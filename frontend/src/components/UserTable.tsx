@@ -36,7 +36,16 @@ export const UserTable = ({
   return (
     <TableContainer
       component={Paper}
-      sx={{ mt: 2, mb: 2, maxHeight: 'calc(100vh - 350px)' }}
+      sx={{
+        mt: 0,
+        mb: 2,
+        maxHeight: 'calc(100vh - 380px)',
+        borderRadius: 1,
+        overflow: 'hidden',
+        boxShadow: 3,
+        border: '1px solid',
+        borderColor: 'grey.100',
+      }}
     >
       <Table stickyHeader>
         <TableHead>
@@ -93,7 +102,7 @@ export const UserTable = ({
                 <TableRow>
                   <TableCell
                     colSpan={5}
-                    align='center'
+                    align="center"
                     sx={{ py: 4, color: 'text.secondary' }}
                   >
                     No users found
@@ -109,6 +118,11 @@ export const UserTable = ({
                 sx={{
                   '& .delete-icon': { opacity: 0 },
                   '&:hover .delete-icon': { opacity: 1 },
+                  '&:hover': {
+                    transform: 'scale(1.002)',
+                    transition: 'all 0.2s ease-in-out',
+                  },
+                  cursor: 'default',
                 }}
               >
                 <TableCell>{user.firstname}</TableCell>
@@ -127,7 +141,7 @@ export const UserTable = ({
                 </TableCell>
                 <TableCell sx={{ width: 30 }}>
                   <IconButton
-                    className='delete-icon'
+                    className="delete-icon"
                     onClick={() => onDeleteUser(user)}
                     sx={{ '&:hover': { color: 'error.main' } }}
                   >
