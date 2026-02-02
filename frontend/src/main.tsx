@@ -1,7 +1,7 @@
 import { StrictMode, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import UserManagement from "./UserManagement.tsx";
-import Login from "./Login";
+import UserManagement from "./pages/UserManagement";
+import Login from "./pages/Login";
 import { refreshAccessToken } from "./auth/authApi";
 import TopBannerStripe from "./components/TopBannerStripe";
 
