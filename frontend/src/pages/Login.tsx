@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 import {
   Container,
   TextField,
@@ -6,12 +6,12 @@ import {
   Typography,
   Box,
   Alert,
-} from "@mui/material";
-import { authService } from "../services/authService";
+} from '@mui/material';
+import { authService } from '../services/authService';
 
 export default function Login({ onLogin }: { onLogin: () => void }) {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -21,7 +21,7 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
     setLoading(true);
 
     if (!username || !password) {
-      setError("Enter username and password");
+      setError('Enter username and password');
       setLoading(false);
       return;
     }
@@ -31,10 +31,10 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
       if (ok) {
         onLogin();
       } else {
-        setError("Invalid credentials");
+        setError('Invalid credentials');
       }
     } catch (err) {
-      setError("Login failed");
+      setError('Login failed');
     } finally {
       setLoading(false);
     }
@@ -72,7 +72,7 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
         />
 
         <Button variant="contained" fullWidth type="submit" disabled={loading}>
-          {loading ? "Signing in..." : "Sign in"}
+          {loading ? 'Signing in...' : 'Sign in'}
         </Button>
       </Box>
     </Container>

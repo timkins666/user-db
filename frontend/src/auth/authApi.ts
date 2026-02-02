@@ -1,6 +1,6 @@
-import axios from "axios";
-import { registerAccessTokenListener, token } from "./authToken";
-import { parseJwtPayload } from "./jwt";
+import axios from 'axios';
+import { registerAccessTokenListener, token } from './authToken';
+import { parseJwtPayload } from './jwt';
 
 const REFRESH_BUFFER_SECONDS = 60;
 let refreshTimeoutId: number | null = null;
@@ -33,7 +33,7 @@ export function scheduleRefreshForToken(accessToken: string | null) {
   }
 
   refreshTimeoutId = window.setTimeout(() => {
-    console.info("proactively refreshing access token");
+    console.info('proactively refreshing access token');
     void refreshAccessToken().catch(() => {
       // ignore; request layer can handle auth failures
     });
@@ -47,7 +47,7 @@ registerAccessTokenListener((t) => {
 
 export async function refreshAccessToken(): Promise<string> {
   const res = await axios.post(
-    "/auth/refresh",
+    '/auth/refresh',
     {},
     {
       withCredentials: true,

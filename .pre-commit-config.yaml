@@ -40,7 +40,7 @@ repos:
   hooks:
   - id: pylint
     name: pylint
-    entry: ./backend/.venv/bin/pylint
+    entry: ./.venv/bin/pylint
     language: system
     types: [python]
     args: [--ignore-patterns=venv]

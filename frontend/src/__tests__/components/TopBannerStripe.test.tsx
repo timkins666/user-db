@@ -1,26 +1,26 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import TopBannerStripe from "../../components/TopBannerStripe";
-import { token } from "../../auth/authToken";
+import { fireEvent, render, screen } from '@testing-library/react';
+import TopBannerStripe from '../../components/TopBannerStripe';
+import { token } from '../../auth/authToken';
 
 function makeFakeJwt(payload: object): string {
-  const header = { alg: "none", typ: "JWT" };
+  const header = { alg: 'none', typ: 'JWT' };
   const b64url = (obj: object) =>
     Buffer.from(JSON.stringify(obj))
-      .toString("base64")
-      .replace(/=/g, "")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_");
+      .toString('base64')
+      .replace(/=/g, '')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_');
 
   return `${b64url(header)}.${b64url(payload)}.`;
 }
 
-describe("TopBannerStripe", () => {
+describe('TopBannerStripe', () => {
   beforeEach(() => {
     token.setAccessToken(null);
   });
 
-  test("shows lowercased username from JWT sub", () => {
-    token.setAccessToken(makeFakeJwt({ sub: "ALIce" }));
+  test('shows lowercased username from JWT sub', () => {
+    token.setAccessToken(makeFakeJwt({ sub: 'ALIce' }));
 
     render(
       <TopBannerStripe>
@@ -28,15 +28,15 @@ describe("TopBannerStripe", () => {
       </TopBannerStripe>,
     );
 
-    expect(screen.getByText("content")).toBeInTheDocument();
-    expect(screen.getByTestId("top-banner-username")).toHaveTextContent(
-      "alice",
+    expect(screen.getByText('content')).toBeInTheDocument();
+    expect(screen.getByTestId('top-banner-username')).toHaveTextContent(
+      'alice',
     );
 
-    const logout = screen.getByRole("button", { name: /logout/i });
+    const logout = screen.getByRole('button', { name: /logout/i });
     fireEvent.click(logout);
 
     expect(token.getAccessToken()).toBe(null);
-    expect(screen.getByTestId("top-banner-username")).toHaveTextContent("");
+    expect(screen.getByTestId('top-banner-username')).toHaveTextContent('');
   });
 });

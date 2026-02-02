@@ -1,33 +1,33 @@
-import { useState } from "react";
+import { useState } from 'react';
 import {
   Container,
   Typography,
   Button,
   OutlinedInput,
   InputAdornment,
-} from "@mui/material";
-import { Add, PersonSearch } from "@mui/icons-material";
-import { type User } from "../types/user";
-import { useUsers } from "../hooks/useUsers";
+} from '@mui/material';
+import { Add, PersonSearch } from '@mui/icons-material';
+import { type User } from '../types/user';
+import { useUsers } from '../hooks/useUsers';
 import {
   UserTable,
   type SortField,
   type SortOrder,
-} from "../components/UserTable";
-import { CreateUserDialog } from "../components/CreateUserDialog";
-import { DeleteUserDialog } from "../components/DeleteUserDialog";
+} from '../components/UserTable';
+import { CreateUserDialog } from '../components/CreateUserDialog';
+import { DeleteUserDialog } from '../components/DeleteUserDialog';
 
 function UserManagement() {
   const { users, createUser, deleteUser } = useUsers();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
-  const [sortField, setSortField] = useState<SortField>("lastname");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
-  const [searchText, setSearchText] = useState<string>("");
+  const [sortField, setSortField] = useState<SortField>('lastname');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [searchText, setSearchText] = useState<string>('');
 
   const handleSort = (field: SortField) => {
     const newOrder =
-      sortField === field && sortOrder === "asc" ? "desc" : "asc";
+      sortField === field && sortOrder === 'asc' ? 'desc' : 'asc';
     setSortField(field);
     setSortOrder(newOrder);
   };
@@ -35,7 +35,7 @@ function UserManagement() {
   const sortedUsers = users.sort((a, b) => {
     const aVal = a[sortField];
     const bVal = b[sortField];
-    let modifier = sortOrder === "asc" ? 1 : -1;
+    let modifier = sortOrder === 'asc' ? 1 : -1;
     return aVal < bVal ? -modifier : aVal > bVal ? modifier : 0;
   });
 
@@ -54,9 +54,9 @@ function UserManagement() {
 
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
         }}
       >
         <OutlinedInput

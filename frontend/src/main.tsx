@@ -1,9 +1,9 @@
-import { StrictMode, useEffect, useRef, useState } from "react";
-import { createRoot } from "react-dom/client";
-import UserManagement from "./pages/UserManagement";
-import Login from "./pages/Login";
-import { refreshAccessToken } from "./auth/authApi";
-import TopBannerStripe from "./components/TopBannerStripe";
+import { StrictMode, useEffect, useRef, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import UserManagement from './pages/UserManagement';
+import Login from './pages/Login';
+import { refreshAccessToken } from './auth/authApi';
+import TopBannerStripe from './components/TopBannerStripe';
 
 function Root() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
@@ -38,7 +38,7 @@ function Root() {
   );
 }
 
-createRoot(document.getElementById("root")!).render(
+createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Root />
   </StrictMode>,
