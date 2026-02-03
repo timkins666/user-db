@@ -1,11 +1,16 @@
+"""JWT auth middleware.
+
+Validates Bearer JWTs on protected endpoints and checks Redis-backed
+access-token revocation.
+"""
+
 from typing import Callable
 
-from fastapi import Request
+from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 
-from userdb import auth
+from userdb.utils import auth, log
 from userdb.redis import is_access_token_revoked
-from userdb.utils import log
 
 
 _logger = log.get_logger(__name__)
@@ -18,6 +23,18 @@ EXEMPT_PATH_PREFIXES = (
     "/favicon.ico",
     "/",
 )
+
+
+def get_user_from_token(payload: dict) -> auth.CurrentUser:
+    """
+    tmp.
+    extract username identifier from JWT payload.
+    adds roles, all admins for now.
+    """
+    return auth.CurrentUser(
+        username=payload["sub"],
+        roles=[auth.Role.USER, auth.Role.ADMIN],
+    )
 
 
 async def jwt_auth_middleware(request: Request, call_next: Callable):
@@ -59,13 +76,9 @@ async def jwt_auth_middleware(request: Request, call_next: Callable):
 
     try:
         payload = auth.verify_access_token(token)
-    except Exception as exc:
-        # auth.verify_access_token raises HTTPException on error; mirror that
-        detail = getattr(exc, "detail", "Invalid token")
-        status_code = getattr(exc, "status_code", 401)
-        return JSONResponse(status_code=status_code, content={"detail": detail})
+    except HTTPException as exc:
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
-    # attach user info for downstream use
-    request.state.user = payload.get("sub")
+    request.state.user = get_user_from_token(payload)
 
     return await call_next(request)

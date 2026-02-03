@@ -8,8 +8,9 @@ from fastapi import status
 import pytest
 from sqlmodel import Session, select
 
-from test.conftest import create_user
+from tests.conftest import create_user
 from userdb.models.user import User
+from userdb.utils.auth import CurrentUser
 
 public_user_keys = {
     "id",
@@ -40,6 +41,24 @@ class TestUsersRouter:
         response = app.get("/users")
         assert response.text == "[]"
 
+    @pytest.mark.parametrize(
+        "roles",
+        [
+            ["user"],
+            ["admin"],
+            ["user", "admin"],
+        ],
+    )
+    def test_get_all_users_not_require_admin(
+        self, app: TestClient, set_current_user, roles: list[str]
+    ):
+        """test get all users doesn't require admin role"""
+
+        set_current_user(CurrentUser(username="bob", roles=roles))
+
+        response = app.get("/users")
+        assert response.text == "[]"
+
     def test_get_all_users(self, app: TestClient, session: Session):
         """test get all users"""
 
@@ -50,7 +69,7 @@ class TestUsersRouter:
                 User(
                     firstname=f"user{i}",
                     lastname="ln",
-                    date_of_birth=date(2000 + i, 2, 3),
+                    dateOfBirth=date(2000 + i, 2, 3),
                     deleted=i == 1,
                 ),
                 session,
@@ -82,6 +101,25 @@ class TestUsersRouter:
         assert uuid.UUID(new_user["id"]).version == 4
 
         assert set(new_user) == public_user_keys
+
+    @pytest.mark.parametrize(
+        "roles, status_code",
+        [
+            (["user"], 403),
+            (["admin"], 200),
+            (["user", "admin"], 200),
+        ],
+    )
+    def test_create_user_requires_admin(
+        self, app: TestClient, set_current_user, roles, status_code
+    ):
+        """test create user requires admin role"""
+
+        set_current_user(CurrentUser(username="bob", roles=roles))
+
+        response = app.post("/users/create", json={"user": self.new_user_data()})
+
+        assert response.status_code == status_code
 
     @pytest.mark.parametrize(
         "dob",
@@ -121,7 +159,8 @@ class TestUsersRouter:
 
         # sqlite needs python date object
         user = create_user(
-            User(**self.new_user_data(dateOfBirth=date(2000, 2, 3))), session
+            User(**self.new_user_data(dateOfBirth=date(2000, 2, 3))),  # type: ignore
+            session,
         )
 
         assert len(session.exec(select(User)).all()) == 1
@@ -147,3 +186,22 @@ class TestUsersRouter:
         response = app.delete(f"/user/{uuid.uuid4()}")
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    @pytest.mark.parametrize(
+        "roles, status_code",
+        [
+            (["user"], 403),
+            (["admin"], 204),
+            (["user", "admin"], 204),
+        ],
+    )
+    def test_delete_user_requires_admin(
+        self, app: TestClient, set_current_user, roles, status_code
+    ):
+        """test delete user requires admin role"""
+
+        set_current_user(CurrentUser(username="bob", roles=roles))
+
+        response = app.delete(f"/user/{uuid.uuid4()}")
+
+        assert response.status_code == status_code

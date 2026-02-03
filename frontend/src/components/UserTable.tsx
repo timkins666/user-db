@@ -39,9 +39,9 @@ export const UserTable = ({
       sx={{
         mt: 0,
         mb: 2,
-        maxHeight: 'calc(100vh - 380px)',
-        borderRadius: 1,
-        overflow: 'hidden',
+        maxHeight: 'calc(100vh - 150px)',
+        borderRadius: 0.5,
+        overflow: 'hidden auto',
         boxShadow: 3,
         border: '1px solid',
         borderColor: 'grey.100',

@@ -37,7 +37,9 @@ services:
     - 8000:80
     volumes:
     - ./backend-fastapi/src:/app/backend-fastapi/src
+    - ~/.aws:/root/.aws:ro
     environment:
+      AWS_PROFILE: ${AWS_PROFILE}
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgresP
       POSTGRES_DB: users

@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from userdb import db
 from userdb.routers import auth, users
-from userdb.middleware import jwt_auth_middleware
+from userdb.middleware.jwt_auth import jwt_auth_middleware
 
 
 @asynccontextmanager
