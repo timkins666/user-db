@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { UserTable } from '../../components/UserTable';
 import { type User } from '../../types/user';
 import dayjs from 'dayjs';
+import { vi } from 'vitest';
 
 const mockUsers: User[] = [
   {
@@ -22,16 +23,16 @@ const mockUsers: User[] = [
 
 const mockProps = {
   users: mockUsers,
-  onDeleteUser: jest.fn(),
+  onDeleteUser: vi.fn(),
   sortField: 'firstname' as const,
   sortOrder: 'asc' as const,
-  onSort: jest.fn(),
+  onSort: vi.fn(),
   searchText: '',
 };
 
 describe('UserTable', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('renders user data correctly', () => {
@@ -49,7 +50,7 @@ describe('UserTable', () => {
   });
 
   test('renders user data correctly with search', () => {
-    render(<UserTable {...{...mockProps, searchText: 'd'}} />);
+    render(<UserTable {...{ ...mockProps, searchText: 'd' }} />);
 
     expect(screen.getByText('John')).toBeInTheDocument();
     expect(screen.getByText('Doe')).toBeInTheDocument();

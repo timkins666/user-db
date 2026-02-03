@@ -1,15 +1,20 @@
 import axios from 'axios';
+import { vi } from 'vitest';
 
-jest.mock('axios');
-
-const mockedAxios = axios as jest.Mocked<any>;
-
-import { authService } from '../../services/authService';
 import { token } from '../../auth/authToken';
+import { authService } from '../../services/authService';
+
+vi.mock('axios', () => ({
+  default: {
+    post: vi.fn(),
+  },
+}));
+
+const mockedAxios = axios as unknown as { post: ReturnType<typeof vi.fn> };
 
 describe('authService.login', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     token.setAccessToken(null);
   });
 

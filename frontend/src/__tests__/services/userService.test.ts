@@ -1,25 +1,26 @@
 import MockDate from 'mockdate';
 import dayjs from 'dayjs';
-import axios from 'axios';
+import { vi } from 'vitest';
 import type { NewUser } from '../../types/user';
 
-jest.mock('axios');
+const apiInstance = vi.hoisted(() => ({
+  get: vi.fn(),
+  post: vi.fn(),
+  delete: vi.fn(),
+  interceptors: { request: { use: vi.fn() }, response: { use: vi.fn() } },
+}));
 
-const mockedAxios = axios as jest.Mocked<any>;
-const apiInstance = {
-  get: jest.fn(),
-  post: jest.fn(),
-  delete: jest.fn(),
-  interceptors: { request: { use: jest.fn() }, response: { use: jest.fn() } },
-};
-
-mockedAxios.create.mockReturnValue(apiInstance);
+vi.mock('axios', () => ({
+  default: {
+    create: vi.fn(() => apiInstance),
+  },
+}));
 
 import { userService } from '../../services/userService';
 
 describe('userService', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {

@@ -2,16 +2,17 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CreateUserDialog } from '../../components/CreateUserDialog';
 import dayjs from 'dayjs';
+import { vi } from 'vitest';
 
 const mockProps = {
   open: true,
-  onClose: jest.fn(),
-  onCreateUser: jest.fn(),
+  onClose: vi.fn(),
+  onCreateUser: vi.fn(),
 };
 
 describe('CreateUserDialog', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('renders form fields when open', () => {
@@ -34,7 +35,7 @@ describe('CreateUserDialog', () => {
     await user.type(screen.getByLabelText(/last name/i), 'Doe');
     await user.type(
       screen.getAllByLabelText(/date of birth/i)[0],
-      '01/02/1993'
+      '01/02/1993',
     );
 
     expect(screen.getByText('Create')).not.toBeDisabled();
@@ -48,7 +49,7 @@ describe('CreateUserDialog', () => {
     await user.type(screen.getByLabelText(/last name/i), 'Do4e');
     await user.type(
       screen.getAllByLabelText(/date of birth/i)[0],
-      '01/02/1851'
+      '01/02/1851',
     );
 
     expect(screen.getByText('Create')).toBeDisabled();
@@ -66,7 +67,7 @@ describe('CreateUserDialog', () => {
     await user.type(screen.getByLabelText(/last name/i), 'Doe');
     await user.type(
       screen.getAllByLabelText(/date of birth/i)[0],
-      '01/02/1993'
+      '01/02/1993',
     );
 
     fireEvent.click(screen.getByText('Create'));
