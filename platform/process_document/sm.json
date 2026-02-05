@@ -1,24 +1,16 @@
 {
     "Comment": "State machine to check and process uploaded documents",
-    "StartAt": "Set object variables",
+    "StartAt": "Check object",
     "States": {
-        "Set object variables": {
-            "Type": "Pass",
-            "Next": "Check object exists",
-            "Assign": {
-                "bucket.$": "$.bucket",
-                "key.$": "$.key"
-            }
-        },
-        "Check object exists": {
+        "Check object": {
             "Type": "Task",
             "Resource": "arn:aws:states:::lambda:invoke",
-            "ResultPath": "$",
+            "ResultPath": "$.check",
             "Parameters": {
-                "FunctionName": "arn:aws:lambda:eu-west-2:145485528601:function:userdb-object-check:$LATEST",
+                "FunctionName": "arn:aws:lambda:eu-west-2:145485528601:function:userdb-object-checker:$LATEST",
                 "Payload": {
-                    "bucket.$": "$bucket",
-                    "key.$": "$key"
+                    "bucket.$": "$.bucket",
+                    "key.$": "$.key"
                 }
             },
             "Retry": [
@@ -35,13 +27,14 @@
                     "JitterStrategy": "FULL"
                 }
             ],
-            "Next": "Choice"
+            "Next": "Choice",
+            "Assign": {}
         },
         "Choice": {
             "Type": "Choice",
             "Choices": [
                 {
-                    "Variable": "$.Payload.file_ok",
+                    "Variable": "$.check.Payload.file_ok",
                     "BooleanEquals": true,
                     "Next": "AnalyzeDocument"
                 }
@@ -53,8 +46,8 @@
             "Parameters": {
                 "Document": {
                     "S3Object": {
-                        "Bucket.$": "$bucket",
-                        "Name.$": "$key"
+                        "Bucket.$": "$.bucket",
+                        "Name.$": "$.check.Payload.new_key"
                     }
                 },
                 "FeatureTypes": [
@@ -90,8 +83,8 @@
             "Type": "Task",
             "Resource": "arn:aws:states:::aws-sdk:s3:putObject",
             "Parameters": {
-                "Bucket.$": "$bucket",
-                "Key.$": "States.Format('{}-analyzed.json', $key)",
+                "Bucket.$": "$.bucket",
+                "Key.$": "States.Format('{}-analyzed.json', $.check.Payload.new_key)",
                 "Body.$": "$.textractResult",
                 "ContentType": "application/json"
             },
@@ -102,5 +95,5 @@
         }
     },
     "QueryLanguage": "JSONPath",
-    "TimeoutSeconds": 60
+    "TimeoutSeconds": 180
 }

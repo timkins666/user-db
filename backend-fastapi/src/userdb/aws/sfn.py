@@ -48,7 +48,11 @@ async def process_document(object_key: str) -> SuccessResult[ProcessedUserData]:
     if status != "SUCCEEDED":
         return SuccessResult(success=False)
 
-    results_key = object_key + RESULTS_SUFFIX
+    results_key = (
+        os.environ["CLEAN_PATH_PREFIX"]
+        + object_key.removeprefix(os.environ["UPLOAD_PATH_PREFIX"])
+        + RESULTS_SUFFIX
+    )
     textract_results = json.loads(
         s3.get_object(bucket=os.environ["UPLOAD_BUCKET_NAME"], key=results_key)
     )

@@ -56,4 +56,4 @@ repos:
         entry: uv run pylint
         language: system
         types: [python]
-        args: [--ignore-patterns=venv]
+        args: [--ignore-paths=venv|platform]
