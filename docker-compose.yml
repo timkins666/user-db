@@ -6,9 +6,9 @@ services:
       POSTGRES_PASSWORD: postgresP
     user: postgres
     ports:
-    - 5432:5432
+      - 5432:5432
     volumes:
-    - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: [CMD-SHELL, pg_isready, -U, postgres]
       interval: 3s
@@ -18,7 +18,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-    - 6379:6379
+      - 6379:6379
     healthcheck:
       test: [CMD, redis-cli, ping]
       interval: 3s
@@ -34,19 +34,23 @@ services:
       redis:
         condition: service_healthy
     ports:
-    - 8000:80
+      - 8000:80
     volumes:
-    - ./backend-fastapi/src:/app/backend-fastapi/src
-    - ~/.aws:/root/.aws:ro
+      - ./backend-fastapi/src:/app/backend-fastapi/src
+      - ~/.aws/config:/root/.aws/config:ro
+      - ~/.aws/credentials:/root/.aws/credentials:ro
+      - ~/.aws/sso:/root/.aws/sso
+    env_file:
+      - ./docker/.env.aws
     environment:
-      AWS_PROFILE: ${AWS_PROFILE}
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgresP
       POSTGRES_DB: users
       POSTGRES_HOST: postgres:5432
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      # REFRESH_DB: true # uncomment to delete all users on startup
+      LOG_LEVEL: INFO
+  # REFRESH_DB: true # uncomment to delete all users on startup
   # backend-dotnet:
   #   build:
   #     context: ./backend-dotnet
@@ -69,14 +73,14 @@ services:
   #     # REFRESH_DB: true # uncomment to delete all users on startup
   frontend:
     depends_on:
-    - backend-fastapi
+      - backend-fastapi
     build:
       context: ./frontend
     ports:
-    - 5173:5173
+      - 5173:5173
     volumes:
-    - ./frontend:/app
-    - /app/node_modules
+      - ./frontend:/app
+      - /app/node_modules
     environment:
       NODE_ENV: development
       CHOKIDAR_USEPOLLING: true # enable hot reload for devving

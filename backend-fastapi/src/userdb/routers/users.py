@@ -2,12 +2,12 @@
 
 from typing import Annotated
 import uuid
-from fastapi import APIRouter, Body, Depends, Path, Request, status
+from fastapi import APIRouter, Body, Path, Request, status
 from sqlmodel import select
 
 from userdb.db import SessionDep
 from userdb.models.user import User, UserCreate, UserPublic
-from userdb.utils.auth import require_roles
+from userdb.utils.auth import require_admin
 
 router = APIRouter()
 
@@ -30,7 +30,7 @@ async def get_all_users(session: SessionDep, *, request: Request):
     "/users/create",
     response_model=UserPublic,
     summary="Create a new user",
-    dependencies=[Depends(require_roles("admin"))],
+    dependencies=[require_admin],
 )
 async def create_user(
     user: Annotated[UserCreate, Body(embed=True)],
@@ -50,7 +50,7 @@ async def create_user(
     "/user/{user_id}",
     summary="Delete the specified user id",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(require_roles("admin"))],
+    dependencies=[require_admin],
 )
 async def delete_user(
     user_id: Annotated[uuid.UUID, Path(title="The ID of the user to delete")],

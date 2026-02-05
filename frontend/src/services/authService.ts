@@ -12,11 +12,9 @@ export const authService = {
           return true;
         }
       }
-      return false;
     } catch (err) {
-      // womp womp
+      console.log(`Backend unavailable or login failed: ${err}`);
     }
-
     return false;
   },
 };

@@ -103,7 +103,7 @@ function UserManagement() {
             transition: 'all 0.2s ease-in-out',
           }}
         >
-          Create New User
+          Create User
         </Button>
       </Box>
 

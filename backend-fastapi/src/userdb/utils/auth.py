@@ -9,8 +9,8 @@ import uuid
 from fastapi import Depends, HTTPException, Request
 import jwt
 
-REFRESH_TOKEN_EXPIRE_SECONDS = 60 * 3
-ACCESS_TOKEN_EXPIRE_MINUTES = 1.5
+REFRESH_TOKEN_EXPIRE_SECONDS = 3600 * 6
+ACCESS_TOKEN_EXPIRE_MINUTES = 15
 JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "dev-secret")
 JWT_ALGORITHM = "HS256"
 CLAIM_TYPE_ACCESS = "access"
@@ -93,12 +93,18 @@ async def get_current_user(request: Request) -> CurrentUser:
     return user
 
 
+CURRENT_USER: CurrentUser = Depends(get_current_user)
+
+
 def require_roles(*required_roles: str):
     """Dependency factory to require specific roles for a route."""
 
-    async def role_checker(user=Depends(get_current_user)):
+    async def role_checker(user=CURRENT_USER):
         if not set(user.roles or []).intersection(required_roles):
             raise HTTPException(403, "Forbidden")
         return user
 
     return role_checker
+
+
+require_admin = Depends(require_roles(Role.ADMIN))

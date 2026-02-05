@@ -30,7 +30,7 @@ class UserBase(SQLModel):
         min_length=1,
         max_length=100,
     )
-    date_of_birth: date = Field(alias="dateOfBirth")
+    date_of_birth: date
 
 
 class UserCreate(
@@ -88,3 +88,17 @@ class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.now, primary_key=True)
     deleted: bool = Field(default=False)
+
+
+class ProcessedUserData(SQLModel):
+    """Container for user data extracted from Textract results"""
+
+    model_config = {
+        "alias_generator": camel.case,
+        "validate_by_name": True,
+        "str_strip_whitespace": True,
+    }
+
+    firstname: str | None
+    lastname: str | None
+    date_of_birth: date | None

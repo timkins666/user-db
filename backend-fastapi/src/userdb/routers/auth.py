@@ -86,12 +86,12 @@ async def login(
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     # Store refresh token and index it for the user
-    redis_store.set_refresh_token(
+    await redis_store.set_refresh_token(
         refresh_token,
         json.dumps(token_info),
         ex_seconds=auth.REFRESH_TOKEN_EXPIRE_SECONDS,
     )
-    redis_store.add_user_refresh_token(
+    await redis_store.add_user_refresh_token(
         username_lower, refresh_token, ex_seconds=auth.REFRESH_TOKEN_EXPIRE_SECONDS
     )
 
@@ -108,7 +108,7 @@ async def refresh(refresh_token: str | None = Cookie(default=None)):
     if not refresh_token:
         raise HTTPException(status_code=401)
 
-    token_info_raw = redis_store.get_refresh_token(refresh_token)
+    token_info_raw = await redis_store.get_refresh_token(refresh_token)
     if not token_info_raw:
         raise HTTPException(status_code=401)
 
@@ -127,8 +127,8 @@ async def refresh(refresh_token: str | None = Cookie(default=None)):
 
     # Maintain per-user refresh token index
     # Maintain per-user refresh token index (remove old, add new)
-    redis_store.remove_user_refresh_token(username, refresh_token)
-    redis_store.add_user_refresh_token(
+    await redis_store.remove_user_refresh_token(username, refresh_token)
+    await redis_store.add_user_refresh_token(
         username, new_token, ex_seconds=auth.REFRESH_TOKEN_EXPIRE_SECONDS
     )
 
@@ -136,14 +136,14 @@ async def refresh(refresh_token: str | None = Cookie(default=None)):
         "user": username,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
-    redis_store.set_refresh_token(
+    await redis_store.set_refresh_token(
         new_token,
         json.dumps(new_token_info),
         ex_seconds=auth.REFRESH_TOKEN_EXPIRE_SECONDS,
     )
 
     # Delete the old refresh token after rotation completes successfully.
-    redis_store.delete_refresh_token(refresh_token)
+    await redis_store.delete_refresh_token(refresh_token)
 
     access_token = auth.create_access_token(subject=username)
     response = _access_token_response(access_token)
@@ -178,7 +178,7 @@ async def logout(
                 username = None
 
         # Revoke the cookie refresh token.
-        redis_store.delete_refresh_token(refresh_token)
+        await redis_store.delete_refresh_token(refresh_token)
 
     # Revoke the presented access token.
     auth_header = request.headers.get("authorization") or ""
@@ -197,19 +197,18 @@ async def logout(
             exp = payload.get("exp")
             if isinstance(exp, (int, float)):
                 ttl = int(exp - time.time())
-                redis_store.revoke_access_token(access_token, ttl_seconds=ttl)
+                await redis_store.revoke_access_token(access_token, ttl_seconds=ttl)
             else:
                 # Fallback: if exp missing/unexpected, revoke for a short window.
-                redis_store.revoke_access_token(access_token, ttl_seconds=60)
+                await redis_store.revoke_access_token(access_token, ttl_seconds=60)
 
     # Bulk revoke any other refresh tokens for the user.
     if username:
-        tokens = redis_store.get_user_refresh_tokens(username)
+        tokens = await redis_store.get_user_refresh_tokens(username)
         for t in tokens:
             if isinstance(t, str) and t:
-                redis_store.delete_refresh_token(t)
-        redis_store.delete_user_refresh_tokens(username)
-
+                await redis_store.delete_refresh_token(t)
+        await redis_store.delete_user_refresh_tokens(username)
     resp = Response(status_code=204)
     _clear_refresh_cookie(resp)
     return resp

@@ -2,7 +2,9 @@
 
 # pylint: disable=missing-function-docstring,missing-class-docstring
 
+import os
 import time
+from unittest import mock
 
 from fastapi.testclient import TestClient
 import pytest
@@ -20,31 +22,41 @@ from userdb import redis as redis_store
 def _app(session):
     """
     FastAPI TestClient app fixture.
-    Overrides `get_session` to use sqlite db.
+    Overrides `get_session` to use sqlite db and sets the default CurrentUser.
     """
 
-    def get_session_override():
-        return session
-
-    fastapi_app.dependency_overrides[get_session] = get_session_override
+    fastapi_app.dependency_overrides[get_session] = lambda: session
     yield TestClient(fastapi_app)
 
 
 @pytest.fixture(autouse=True)
-def _clear_client_state(app: TestClient) -> None:
-    """clear cookies and auth headers from TestClient to keep tests isolated"""
+def _clear_client_state(app: TestClient):
+    """
+    Clear cookies and auth headers after each test to keep tests isolated
+    """
+
+    yield
+
     app.cookies.clear()
     app.headers.pop("Authorization", None)
 
 
-@pytest.fixture
-def set_current_user():
-    """fixture to provide result of get_current_user"""
+@pytest.fixture(autouse=True)
+def _set_default_user(set_current_user, default_user: auth.CurrentUser) -> None:
+    """
+    Set a default admin user for tests (can be overridden with set_current_user)
+    """
 
-    def _set(user: auth.CurrentUser):
-        fastapi_app.dependency_overrides[auth.get_current_user] = lambda: user
+    set_current_user(default_user)
 
-    yield _set
+
+@pytest.fixture(autouse=True)
+def _set_default_auth_header(app: TestClient, access_token) -> None:
+    """
+    Set a default auth header for tests (can be overridden in individual tests)
+    """
+
+    app.headers["Authorization"] = f"Bearer {access_token}"
 
 
 @pytest.fixture(name="session", scope="session")
@@ -60,6 +72,19 @@ def _session():
 
     with Session(engine) as session:
         yield session
+
+
+@pytest.fixture(autouse=True)
+def default_env_vars():
+    with mock.patch.dict(
+        os.environ,
+        {
+            "UPLOAD_BUCKET_NAME": "test-bucket",
+            "UPLOAD_PATH_PREFIX": "test-uploads",
+            "AWS_REGION": "eu-west-1",
+        },
+    ):
+        yield
 
 
 @pytest.fixture(autouse=True)
@@ -79,11 +104,27 @@ def create_user(user: User, session: Session):
 
 @pytest.fixture(name="username")
 def _username():
-    return "test-user"
+    return "alan.jenkins"
 
 
-@pytest.fixture()
-def access_token(username):
+@pytest.fixture(name="default_user")
+def _default_user(username: str):
+    """return a default test user for requests"""
+    return auth.CurrentUser(username=username, roles=[auth.Role.USER, auth.Role.ADMIN])
+
+
+@pytest.fixture(name="set_current_user")
+def _set_current_user():
+    """fixture to provide result of get_current_user"""
+
+    def _set(user: auth.CurrentUser):
+        fastapi_app.dependency_overrides[auth.get_current_user] = lambda: user
+
+    yield _set
+
+
+@pytest.fixture(name="access_token")
+def _access_token(username):
     return auth.create_access_token(subject=username)
 
 

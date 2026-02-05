@@ -1,0 +1,106 @@
+{
+    "Comment": "State machine to check and process uploaded documents",
+    "StartAt": "Set object variables",
+    "States": {
+        "Set object variables": {
+            "Type": "Pass",
+            "Next": "Check object exists",
+            "Assign": {
+                "bucket.$": "$.bucket",
+                "key.$": "$.key"
+            }
+        },
+        "Check object exists": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "ResultPath": "$",
+            "Parameters": {
+                "FunctionName": "arn:aws:lambda:eu-west-2:145485528601:function:userdb-object-check:$LATEST",
+                "Payload": {
+                    "bucket.$": "$bucket",
+                    "key.$": "$key"
+                }
+            },
+            "Retry": [
+                {
+                    "ErrorEquals": [
+                        "Lambda.ServiceException",
+                        "Lambda.AWSLambdaException",
+                        "Lambda.SdkClientException",
+                        "Lambda.TooManyRequestsException"
+                    ],
+                    "IntervalSeconds": 1,
+                    "MaxAttempts": 3,
+                    "BackoffRate": 2,
+                    "JitterStrategy": "FULL"
+                }
+            ],
+            "Next": "Choice"
+        },
+        "Choice": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Variable": "$.Payload.file_ok",
+                    "BooleanEquals": true,
+                    "Next": "AnalyzeDocument"
+                }
+            ],
+            "Default": "Fail"
+        },
+        "AnalyzeDocument": {
+            "Type": "Task",
+            "Parameters": {
+                "Document": {
+                    "S3Object": {
+                        "Bucket.$": "$bucket",
+                        "Name.$": "$key"
+                    }
+                },
+                "FeatureTypes": [
+                    "FORMS",
+                    "QUERIES"
+                ],
+                "QueriesConfig": {
+                    "Queries": [
+                        {
+                            "Text": "what is the person's first name",
+                            "Alias": "firstname"
+                        },
+                        {
+                            "Text": "what is the person's last name",
+                            "Alias": "lastname"
+                        },
+                        {
+                            "Text": "what is the person's full name",
+                            "Alias": "fullname"
+                        },
+                        {
+                            "Text": "what is the person's date of birth",
+                            "Alias": "date_of_birth"
+                        }
+                    ]
+                }
+            },
+            "Resource": "arn:aws:states:::aws-sdk:textract:analyzeDocument",
+            "ResultPath": "$.textractResult",
+            "Next": "SaveResultToS3"
+        },
+        "SaveResultToS3": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::aws-sdk:s3:putObject",
+            "Parameters": {
+                "Bucket.$": "$bucket",
+                "Key.$": "States.Format('{}-analyzed.json', $key)",
+                "Body.$": "$.textractResult",
+                "ContentType": "application/json"
+            },
+            "End": true
+        },
+        "Fail": {
+            "Type": "Fail"
+        }
+    },
+    "QueryLanguage": "JSONPath",
+    "TimeoutSeconds": 60
+}

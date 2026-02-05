@@ -24,6 +24,8 @@ def test_exempt_paths_do_not_require_auth(app):
 
 
 def test_missing_authorization_header_returns_401(app):
+    app.headers.pop("Authorization", None)
+
     resp = app.get("/users")
     assert resp.status_code == 401
     assert resp.json().get("detail") == "Missing or invalid Authorization header"

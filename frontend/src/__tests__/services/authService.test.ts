@@ -59,11 +59,15 @@ describe('authService.login', () => {
   });
 
   test('returns false on axios error', async () => {
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
     mockedAxios.post.mockRejectedValueOnce(new Error('network'));
 
     const ok = await authService.login('alice', 'password');
 
     expect(ok).toBe(false);
     expect(token.getAccessToken()).toBe(null);
+
+    consoleLogSpy.mockRestore();
   });
 });

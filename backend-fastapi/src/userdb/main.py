@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from userdb import db
-from userdb.routers import auth, users
+from userdb.routers import auth, documents, users
 from userdb.middleware.jwt_auth import jwt_auth_middleware
 
 
@@ -33,8 +33,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(users.router)
 app.include_router(auth.router)
+app.include_router(documents.router)
+app.include_router(users.router)
 
 
 @app.get("/", status_code=200)

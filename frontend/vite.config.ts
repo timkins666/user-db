@@ -1,6 +1,5 @@
-import { loadEnv } from "vite";
-import { defineConfig } from "vitest/config";
-import react from "@vitejs/plugin-react";
+import { loadEnv, defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
 // https://vite.dev/config/
 export default ({ mode }: { mode: string }) => {
@@ -9,9 +8,9 @@ export default ({ mode }: { mode: string }) => {
 
   const serverConfig: any = {};
 
-  if (mode === "development") {
+  if (mode === 'development') {
     serverConfig.proxy = {
-      "/auth": {
+      '/auth': {
         target: env.VITE_BACKEND_FASTAPI_PROXY,
         changeOrigin: true,
       },
@@ -23,9 +22,12 @@ export default ({ mode }: { mode: string }) => {
     plugins: [react()],
     server: serverConfig,
     test: {
-      environment: "jsdom",
-      setupFiles: "./src/setupTests.ts",
+      environment: 'jsdom',
+      setupFiles: './src/setupTests.ts',
       globals: true,
+      typecheck: {
+        tsconfig: './tsconfig.test.json',
+      },
     },
   });
 };

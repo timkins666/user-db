@@ -23,11 +23,6 @@ public_user_keys = {
 class TestUsersRouter:
     """test user handlers"""
 
-    @pytest.fixture(autouse=True)
-    def _set_auth_header(self, app: TestClient, access_token):
-        """sets the auth header on the app for all tests in this class"""
-        app.headers["Authorization"] = f"Bearer {access_token}"
-
     def new_user_data(self, **kwargs):
         """valid new user request data"""
         return {
@@ -69,7 +64,7 @@ class TestUsersRouter:
                 User(
                     firstname=f"user{i}",
                     lastname="ln",
-                    dateOfBirth=date(2000 + i, 2, 3),
+                    date_of_birth=date(2000 + i, 2, 3),
                     deleted=i == 1,
                 ),
                 session,

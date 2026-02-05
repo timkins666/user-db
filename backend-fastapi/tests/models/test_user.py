@@ -15,7 +15,9 @@ class TestUserCreate:
 
     def test_validate_success(self):
         """validate with valid data"""
-        user = sut.UserCreate(firstname="x", lastname="y", dateOfBirth=date(2000, 1, 1))
+        user = sut.UserCreate(
+            firstname="x", lastname="y", date_of_birth=date(2000, 1, 1)
+        )
 
         assert user.firstname == user.firstname
         assert user.lastname == user.lastname
@@ -24,7 +26,7 @@ class TestUserCreate:
     def test_model_strips_name_whitespace(self):
         """model strips whitespace from strings"""
         user = sut.UserCreate(
-            firstname=" x ", lastname=" \t y \n", dateOfBirth=date(2000, 1, 1)
+            firstname=" x ", lastname=" \t y \n", date_of_birth=date(2000, 1, 1)
         )
 
         assert user.firstname == "x"
@@ -42,7 +44,7 @@ class TestUserCreate:
             if not valid
             else nullcontext()
         ):
-            result = sut.UserCreate(firstname="x", lastname="y", dateOfBirth=dob)
+            result = sut.UserCreate(firstname="x", lastname="y", date_of_birth=dob)
 
         if valid:
             assert result.date_of_birth == dob
@@ -66,7 +68,7 @@ class TestUserCreate:
             else nullcontext()
         ):
             result = sut.UserCreate(
-                firstname="x", lastname="y", dateOfBirth=date(2000, 1, birth_date)
+                firstname="x", lastname="y", date_of_birth=date(2000, 1, birth_date)
             )
 
         if valid:
@@ -83,7 +85,7 @@ class TestUserCreate:
     def test_validate_names_valid(self, firstname: str, lastname: str):
         """validate with valid names"""
         _ = sut.UserCreate(
-            firstname=firstname, lastname=lastname, dateOfBirth=date(2000, 1, 1)
+            firstname=firstname, lastname=lastname, date_of_birth=date(2000, 1, 1)
         )
 
     @pytest.mark.parametrize(
@@ -95,7 +97,7 @@ class TestUserCreate:
 
         with pytest.raises(HTTPException, match="must only contain"):
             _ = sut.UserCreate(
-                firstname=firstname, lastname=lastname, dateOfBirth=date(2000, 1, 1)
+                firstname=firstname, lastname=lastname, date_of_birth=date(2000, 1, 1)
             )
 
     @pytest.mark.parametrize(
@@ -114,5 +116,5 @@ class TestUserCreate:
 
         with pytest.raises(ValidationError, match=error):
             _ = sut.UserCreate(
-                firstname=firstname, lastname=lastname, dateOfBirth=date(2000, 1, 1)
+                firstname=firstname, lastname=lastname, date_of_birth=date(2000, 1, 1)
             )

@@ -68,7 +68,7 @@ async def jwt_auth_middleware(request: Request, call_next: Callable):
 
     token = auth_header.split(" ", 1)[1].strip()
 
-    if is_access_token_revoked(token):
+    if await is_access_token_revoked(token):
         return JSONResponse(
             status_code=401,
             content={"detail": "Token revoked"},
