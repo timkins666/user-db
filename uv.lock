@@ -80,6 +80,7 @@ dependencies = [
     { name = "humps" },
     { name = "psycopg2-binary" },
     { name = "pyjwt" },
+    { name = "python-dateutil" },
     { name = "redis" },
     { name = "sqlmodel" },
 ]
@@ -92,6 +93,7 @@ requires-dist = [
     { name = "humps", specifier = ">=0.2.2" },
     { name = "psycopg2-binary", specifier = ">=2.9.10" },
     { name = "pyjwt", specifier = ">=2.10.1" },
+    { name = "python-dateutil", specifier = ">=2.9.0.post0" },
     { name = "redis", specifier = ">=7.1.0" },
     { name = "sqlmodel", specifier = ">=0.0.24" },
 ]
@@ -964,6 +966,19 @@ wheels = [
 ]
 
 [[package]]
+name = "pylint-reenable"
+version = "0.1.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pylint" },
+    { name = "tokenize-rt" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/73/fb/92a94501f9822e5e1d1cd1c586b888d5d686abe7667d0ccb22e29a3c06fb/pylint_reenable-0.1.4.tar.gz", hash = "sha256:6e339490dac788fcb81e48241c0298f728fbf936675a63bf15cf6b0364882765", size = 4813, upload-time = "2022-12-01T21:40:02.543Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/70/33/fb6d1d7f21f7ec61613f74529f9ba4b9c711249fbc0bf5d61853d3f49201/pylint_reenable-0.1.4-py2.py3-none-any.whl", hash = "sha256:80b2a1130a7b2f897fa183089339d8f4ebb146675a50516b22e39f30acb7aae6", size = 5167, upload-time = "2022-12-01T21:40:01.137Z" },
+]
+
+[[package]]
 name = "pytest"
 version = "9.0.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1279,6 +1294,15 @@ wheels = [
 ]
 
 [[package]]
+name = "tokenize-rt"
+version = "6.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/69/ed/8f07e893132d5051d86a553e749d5c89b2a4776eb3a579b72ed61f8559ca/tokenize_rt-6.2.0.tar.gz", hash = "sha256:8439c042b330c553fdbe1758e4a05c0ed460dbbbb24a606f11f0dee75da4cad6", size = 5476, upload-time = "2025-05-23T23:48:00.035Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/33/f0/3fe8c6e69135a845f4106f2ff8b6805638d4e85c264e70114e8126689587/tokenize_rt-6.2.0-py2.py3-none-any.whl", hash = "sha256:a152bf4f249c847a66497a4a95f63376ed68ac6abf092a2f7cfb29d044ecff44", size = 6004, upload-time = "2025-05-23T23:47:58.812Z" },
+]
+
+[[package]]
 name = "tomlkit"
 version = "0.14.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1344,6 +1368,7 @@ dependencies = [
 dev = [
     { name = "pre-commit" },
     { name = "pylint" },
+    { name = "pylint-reenable" },
 ]
 test = [
     { name = "moto" },
@@ -1358,6 +1383,7 @@ requires-dist = [{ name = "backend-fastapi", editable = "backend-fastapi" }]
 dev = [
     { name = "pre-commit", specifier = ">=4.5.1" },
     { name = "pylint", specifier = ">=3.3.8" },
+    { name = "pylint-reenable", specifier = ">=0.1.4" },
 ]
 test = [
     { name = "moto", specifier = ">=5.1.20" },

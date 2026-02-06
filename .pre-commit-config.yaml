@@ -57,3 +57,7 @@ repos:
         language: system
         types: [python]
         args: [--ignore-paths=venv|platform]
+  - repo: https://github.com/MarcoGorelli/pylint-reenable
+    rev: v0.1.4
+    hooks:
+      - id: pylint-reenable

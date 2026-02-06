@@ -17,40 +17,53 @@ ALLOWED_MIME_TYPES = {
     "image/jpeg",
     "image/png",
 }
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 
 
 s3 = None  # lazy init s3 client
 
 
-def lambda_handler(payload, context):
+class Response:
+    def __init__(self, file_ok: bool, reason: str = "", new_key: str = ""):
+        self.file_ok = file_ok
+        self.reason = reason
+        self.new_key = new_key
+
+    def as_dict(self):
+        result: dict = {"file_ok": self.file_ok}
+        if self.reason:
+            result["reason"] = self.reason
+        if self.new_key:
+            result["new_key"] = self.new_key
+        return result
+
+
+def lambda_handler(payload, context) -> dict:
     print("Received payload: " + json.dumps(payload, indent=2))
 
+    result = _all_checks(payload, context)
+
+    return result.as_dict()
+
+
+def _all_checks(payload, context) -> Response:
     bucket = payload["bucket"]
     key = urllib.parse.unquote_plus(payload["key"], encoding="utf-8")
 
     if not bucket or not key:
-        print("Invalid payload: missing bucket or key")
-        return {"file_ok": False, "reason": "missing bucket or key"}
+        return Response(file_ok=False, reason="missing bucket or key")
 
-    if not _file_exists(bucket, key):
-        print(f"File s3://{bucket}/{key} does not exist")
-        return {"file_ok": False, "reason": "file_not_found"}
+    if not (fs := _file_size(bucket, key)).file_ok:
+        return fs
 
-    if not _check_guard_duty_malware_tag(bucket, key):
-        return {
-            "file_ok": False,
-            "reason": "virus_detected_or_scan_failed",
-        }
+    if not (av := _check_guard_duty_malware_tag(bucket, key)).file_ok:
+        return av
 
-    if not _check_file_type(bucket, key):
-        return {
-            "file_ok": False,
-            "reason": "invalid_file_type",
-        }
+    if not (ft := _check_file_type(bucket, key)).file_ok:
+        return ft
 
     new_key = _move_to_clean_prefix(bucket, key)
-
-    return {"file_ok": True, "new_key": new_key}
+    return Response(file_ok=True, new_key=new_key)
 
 
 def _s3_client():
@@ -62,15 +75,23 @@ def _s3_client():
     return s3
 
 
-def _file_exists(bucket, key) -> bool:
+def _file_size(bucket, key) -> Response:
     try:
-        _s3_client().head_object(Bucket=bucket, Key=key)
-        return True
+        response = _s3_client().head_object(Bucket=bucket, Key=key)
     except botocore.exceptions.ClientError:
-        return False
+        return Response(file_ok=False, reason="file_not_found")
+
+    file_size = response.get("ContentLength", 0)
+    print(f"File size: {file_size} bytes")
+
+    if file_size <= 0:
+        return Response(file_ok=False, reason="empty_file")
+    if file_size > MAX_FILE_SIZE:
+        return Response(file_ok=False, reason="file_too_big")
+    return Response(file_ok=True)
 
 
-def _check_file_type(bucket, key) -> bool:
+def _check_file_type(bucket, key) -> Response:
     try:
         resp = _s3_client().get_object(
             Bucket=bucket,
@@ -82,19 +103,18 @@ def _check_file_type(bucket, key) -> bool:
         kind = filetype.guess(head)
         if not kind:
             print("Unknown file type")
-            return False
+            return Response(file_ok=False, reason="unknown_file_type")
 
         if kind.mime not in ALLOWED_MIME_TYPES:
             print(f"Disallowed type: {kind.mime}")
-            return False
-
-        return True
+            return Response(file_ok=False, reason="disallowed_file_type")
+        return Response(file_ok=True)
     except Exception as e:
         print(f"Error checking file signature: {e}")
-        return False
+        return Response(file_ok=False, reason="error_checking_file_type")
 
 
-def _check_guard_duty_malware_tag(bucket, key) -> bool:
+def _check_guard_duty_malware_tag(bucket, key) -> Response:
     max_wait = 60  # seconds
     malware_status = None
     try:
@@ -116,10 +136,23 @@ def _check_guard_duty_malware_tag(bucket, key) -> bool:
             time.sleep(5)
 
         print(f"GuardDutyMalwareScanStatus: {malware_status}")
-        return malware_status == "NO_THREATS_FOUND"
+
+        match malware_status:
+            case "NO_THREATS_FOUND":
+                return Response(file_ok=True)
+            case "THREATS_FOUND":
+                reason = "malware_detected"
+            case "UNSUPPORTED" | "ACCESS_DENIED" | "FAILED":
+                reason = "malware_scan_failed"
+            case None:
+                reason = "malware_scan_pending"
+            case _:
+                reason = f"unknown scan status: {malware_status}"
+
+        return Response(file_ok=False, reason=reason)
     except Exception as e:
         print(f"Error checking GuardDuty malware tag: {e}")
-        return False
+        return Response(file_ok=False, reason="error_checking_malware_tag")
 
 
 def _move_to_clean_prefix(bucket: str, key: str) -> str:

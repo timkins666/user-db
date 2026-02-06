@@ -141,7 +141,7 @@ def test_logout_bulk_revokes_all_refresh_tokens_for_user(app):
     assert resp2.status_code == 401
 
 
-def test_logout_revokes_access_token_in_redis(app, fake_redis):
+async def test_logout_revokes_access_token_in_redis(app, fake_redis):
     login_resp = app.post("/auth/login", json={"username": "frank", "password": "pw"})
     assert login_resp.status_code == 200
 
@@ -156,4 +156,4 @@ def test_logout_revokes_access_token_in_redis(app, fake_redis):
 
     # Verify a revocation key was set in Redis.
     revoked_key = redis_store.revoked_access_token_key(access_token)
-    assert fake_redis.get(revoked_key) == "1"
+    assert await fake_redis.get(revoked_key) == "1"

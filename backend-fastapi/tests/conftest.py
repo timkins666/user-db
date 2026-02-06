@@ -2,6 +2,8 @@
 
 # pylint: disable=missing-function-docstring,missing-class-docstring
 
+import asyncio
+import dataclasses
 import os
 import time
 from unittest import mock
@@ -74,15 +76,31 @@ def _session():
         yield session
 
 
+@dataclasses.dataclass(frozen=True, init=False)
+class MockEnv:
+    # pylint: disable=invalid-name
+    UPLOAD_BUCKET_NAME: str = "test-bucket"
+    UPLOAD_PATH_PREFIX: str = "test-uploads"
+    CLEAN_PATH_PREFIX: str = "test-clean"
+    AWS_REGION: str = "eu-west-1"
+    DOCUMENT_PROCESSING_SFN_ARN: str = "sf_arn"
+
+
 @pytest.fixture(autouse=True)
 def default_env_vars():
     with mock.patch.dict(
         os.environ,
-        {
-            "UPLOAD_BUCKET_NAME": "test-bucket",
-            "UPLOAD_PATH_PREFIX": "test-uploads",
-            "AWS_REGION": "eu-west-1",
-        },
+        dataclasses.asdict(MockEnv()),
+    ):
+        yield
+
+
+@pytest.fixture(autouse=True, scope="session")
+def patch_asyncio_sleep():
+    actual_sleep = asyncio.sleep
+    with mock.patch(
+        "asyncio.sleep",
+        lambda t: print(f"Simulated sleep for {t} seconds") or actual_sleep(0),
     ):
         yield
 
@@ -134,7 +152,7 @@ class FakeRedis:
     def __init__(self):
         self._store: dict[str, tuple[str | set[str], float | None]] = {}
 
-    def _is_expired(self, key: str) -> bool:
+    async def _is_expired(self, key: str) -> bool:
         item = self._store.get(key)
         if not item:
             return True
@@ -144,29 +162,29 @@ class FakeRedis:
             return True
         return False
 
-    def set(self, key: str, value: str, ex: int | None = None):
+    async def set(self, key: str, value: str, ex: int | None = None):
         expires_at = (time.time() + ex) if ex is not None else None
         self._store[key] = (value, expires_at)
         return True
 
-    def get(self, key: str):
-        if self._is_expired(key):
+    async def get(self, key: str):
+        if await self._is_expired(key):
             return None
         value, _expires_at = self._store[key]
         return value
 
-    def delete(self, key: str):
+    async def delete(self, key: str):
         return 1 if self._store.pop(key, None) is not None else 0
 
-    def expire(self, key: str, ex: int):
-        if self._is_expired(key):
+    async def expire(self, key: str, ex: int):
+        if await self._is_expired(key):
             return False
         value, _ = self._store[key]
         self._store[key] = (value, time.time() + ex)
         return True
 
-    def sadd(self, key: str, member: str):
-        if self._is_expired(key):
+    async def sadd(self, key: str, member: str):
+        if await self._is_expired(key):
             current: set[str] = set()
             expires_at = None
         else:
@@ -178,8 +196,8 @@ class FakeRedis:
         self._store[key] = (current, expires_at)
         return added
 
-    def srem(self, key: str, member: str):
-        if self._is_expired(key):
+    async def srem(self, key: str, member: str):
+        if await self._is_expired(key):
             return 0
         value, expires_at = self._store[key]
         if not isinstance(value, set):
@@ -189,19 +207,19 @@ class FakeRedis:
         self._store[key] = (value, expires_at)
         return removed
 
-    def smembers(self, key: str):
-        if self._is_expired(key):
+    async def smembers(self, key: str):
+        if await self._is_expired(key):
             return set()
         value, _expires_at = self._store[key]
         if isinstance(value, set):
             return set(value)
         return set()
 
-    def eval(self, _script: str, _numkeys: int, key: str):
+    async def eval(self, _script: str, _numkeys: int, key: str):
         # Implements the get+del Lua behavior used by the app.
-        val = self.get(key)
+        val = await self.get(key)
         if val is not None:
-            self.delete(key)
+            await self.delete(key)
         return val
 
 
@@ -210,3 +228,6 @@ def fake_redis(monkeypatch):
     r = FakeRedis()
     monkeypatch.setattr(redis_store, redis_store.get_redis.__name__, lambda: r)
     yield r
+
+
+mock.patch("asyncio.sleep")

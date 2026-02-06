@@ -56,10 +56,10 @@ def test_expired_token_returns_401(app):
     assert resp.json().get("detail") == "Token expired"
 
 
-def test_revoked_access_token_returns_401(app, fake_redis):
+async def test_revoked_access_token_returns_401(app, fake_redis):
     token = auth.create_access_token(subject="revoked-user")
     revoked_key = redis_store.revoked_access_token_key(token)
-    fake_redis.set(revoked_key, "1", ex=60)
+    await fake_redis.set(revoked_key, "1", ex=60)
 
     app.headers["Authorization"] = f"Bearer {token}"
     resp = app.get("/users")

@@ -1,8 +1,8 @@
 """Helper methods for working with AWS Textract."""
 
 from datetime import date
-import re
 from typing import Iterable
+import dateutil
 
 from userdb.responses import SuccessResult
 from userdb.utils import log
@@ -50,6 +50,16 @@ def query_results(blocks: list) -> ProcessedUserData:
     )
 
 
+# TODOs:
+# Try going hardcore on k/v usage and queries as fallback,
+# ideally remove queries.
+#
+# Only capitalise if all upper or lowercase
+#
+# look for singlechar' like D'Silva, O'Connor
+#
+
+
 def _capitalise_name(*names: str) -> Iterable[str]:
     """
     Capitalise a name, handling hyphens
@@ -68,6 +78,7 @@ def _parse_name(extracted_data: dict) -> Iterable[str]:
     """
     Attempt to pick correct values for firstname and lastname from Textract results
     """
+    _logger.info("Extracting name from Textract results: %s", extracted_data)
 
     fullname: str = extracted_data.get("fullname", "")
     firstname: str = extracted_data.get("firstname", "")
@@ -92,25 +103,11 @@ def _parse_dob(dob: str) -> date | None:
         return None
 
     try:
-        dob_numeric = re.sub(r"[^\d]", "", dob)
-
-        year = month = day = -1
-
-        if len(dob_numeric) == 8:
-            day = int(dob_numeric[:2])
-            month = int(dob_numeric[2:4])
-            year = int(dob_numeric[4:])
-        elif len(dob_numeric) == 6:
-            day = int(dob_numeric[:2])
-            month = int(dob_numeric[2:4])
-            year = int(dob_numeric[4:])
-
-            if year <= date.today().year:
-                year += 2000
-            else:
-                year += 1900
-
-        return date(year, month, day)
+        parsed_date = dateutil.parser.parse(dob, dayfirst=True, fuzzy=True)
+        _logger.info(
+            "Parsed date of birth %s from Textract input: %s", parsed_date, dob
+        )
+        return parsed_date.date()
     except (ValueError, IndexError):
         _logger.warning("Failed to parse date of birth: %s", dob)
     return None

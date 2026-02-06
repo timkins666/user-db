@@ -54,7 +54,8 @@ async def revoke_access_token(access_token: str, *, ttl_seconds: int) -> None:
 
 async def is_access_token_revoked(access_token: str) -> bool:
     """Return True if token has been revoked."""
-    return await get_redis().get(revoked_access_token_key(access_token)) is not None
+    value = await get_redis().get(revoked_access_token_key(access_token))
+    return value is not None
 
 
 async def set_refresh_token(

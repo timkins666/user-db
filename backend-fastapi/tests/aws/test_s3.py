@@ -7,7 +7,10 @@ import re
 from unittest import mock
 import uuid
 
+import boto3
+import moto
 import pytest
+
 from userdb.aws import s3
 from userdb.models.document import DocumentPresignRequest
 from userdb.utils.auth import CurrentUser
@@ -59,3 +62,20 @@ def test_create_object_key(input_filename: str, s3_filename: str):
         result
         == f"upload_PREfix/alan/42845275-f3d0-41cd-aa17-001473b78e5f_{s3_filename}"
     )
+
+
+@moto.mock_aws()
+def test_get_object():
+    """test get_object retrieves and decodes S3 object content"""
+
+    region = boto3.Session().region_name
+    s3_client = boto3.client("s3", region_name=region)
+
+    s3_client.create_bucket(
+        Bucket="test-bucket", CreateBucketConfiguration={"LocationConstraint": region}
+    )
+    s3_client.put_object(Bucket="test-bucket", Key="test-key", Body=b'{"test": "data"}')
+
+    result = s3.get_object(bucket="test-bucket", key="test-key")
+
+    assert result == '{"test": "data"}'

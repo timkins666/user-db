@@ -6,6 +6,11 @@
             "Type": "Task",
             "Resource": "arn:aws:states:::lambda:invoke",
             "ResultPath": "$.check",
+            "ResultSelector": {
+                "file_ok.$": "$.Payload.file_ok",
+                "reason.$": "$.Payload.reason",
+                "new_key.$": "$.Payload.new_key"
+            },
             "Parameters": {
                 "FunctionName": "arn:aws:lambda:eu-west-2:145485528601:function:userdb-object-checker:$LATEST",
                 "Payload": {
@@ -27,14 +32,13 @@
                     "JitterStrategy": "FULL"
                 }
             ],
-            "Next": "Choice",
-            "Assign": {}
+            "Next": "Choice"
         },
         "Choice": {
             "Type": "Choice",
             "Choices": [
                 {
-                    "Variable": "$.check.Payload.file_ok",
+                    "Variable": "$.check.file_ok",
                     "BooleanEquals": true,
                     "Next": "AnalyzeDocument"
                 }
@@ -47,7 +51,7 @@
                 "Document": {
                     "S3Object": {
                         "Bucket.$": "$.bucket",
-                        "Name.$": "$.check.Payload.new_key"
+                        "Name.$": "$.check.new_key"
                     }
                 },
                 "FeatureTypes": [
@@ -84,7 +88,7 @@
             "Resource": "arn:aws:states:::aws-sdk:s3:putObject",
             "Parameters": {
                 "Bucket.$": "$.bucket",
-                "Key.$": "States.Format('{}-analyzed.json', $.check.Payload.new_key)",
+                "Key.$": "States.Format('{}-analyzed.json', $.check.new_key)",
                 "Body.$": "$.textractResult",
                 "ContentType": "application/json"
             },

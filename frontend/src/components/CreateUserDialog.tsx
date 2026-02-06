@@ -16,7 +16,6 @@ import { CloudUpload as CloudUploadIcon } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers';
 import {
   type NewUser,
-  type User,
   type UserValidation,
   validateNewUser,
 } from '../types/user';
