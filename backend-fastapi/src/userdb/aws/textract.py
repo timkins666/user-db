@@ -1,6 +1,7 @@
 """Helper methods for working with AWS Textract."""
 
 from datetime import date
+import re
 from typing import Iterable
 import dateutil
 
@@ -20,7 +21,19 @@ def handle_results(textract_results: dict) -> SuccessResult[ProcessedUserData]:
 
     blocks = textract_results["Blocks"]
 
-    return SuccessResult(success=True, payload=query_results(blocks))
+    f_results = form_results(kvs(blocks))
+    q_results = query_results(blocks)
+
+    _logger.info("Form results: %s", f_results.model_dump())
+    _logger.info("Query results: %s", q_results.model_dump())
+
+    merged_results = ProcessedUserData(
+        firstname=f_results.firstname or q_results.firstname,
+        lastname=f_results.lastname or q_results.lastname,
+        date_of_birth=f_results.date_of_birth or q_results.date_of_birth,
+    )
+
+    return SuccessResult(success=True, payload=merged_results)
 
 
 def query_results(blocks: list) -> ProcessedUserData:
@@ -50,31 +63,119 @@ def query_results(blocks: list) -> ProcessedUserData:
     )
 
 
-# TODOs:
-# Try going hardcore on k/v usage and queries as fallback,
-# ideally remove queries.
-#
-# Only capitalise if all upper or lowercase
-#
-# look for singlechar' like D'Silva, O'Connor
-#
+def form_results(kv_pairs: dict[str, str]) -> ProcessedUserData:
+    """Get user data from form key-value pairs in textract output."""
+
+    if not kv_pairs:
+        _logger.info("No key-value pairs found in Textract results")
+        return ProcessedUserData.empty()
+
+    unrelated_key_rank = 999
+
+    def _rank_date_key(key: str) -> int:
+        key_ = re.sub(r"[^a-z]", "", key.lower())
+
+        exact_ranks = {
+            "dateofbirth": 0,
+            "dob": 1,
+            "birthdate": 2,
+        }
+
+        if key_ in exact_ranks:
+            return exact_ranks[key_]
+        if "birth" in key_ and "date" in key_:
+            return 11
+        if "birth" in key_ or "date" in key_:
+            return 12
+        return unrelated_key_rank
+
+    def _rank_first_name_key(key: str) -> int:
+        key_ = re.sub(r"[^a-z]", "", key.lower())
+
+        exact_ranks = {
+            "firstname": 0,
+            "givenname": 1,
+            "forename": 2,
+        }
+
+        if key_ in exact_ranks:
+            return exact_ranks[key_]
+        if "name" in key_:
+            return 11
+        return unrelated_key_rank
+
+    def _rank_last_name_key(key: str) -> int:
+        key_ = re.sub(r"[^a-z]", "", key.lower())
+
+        exact_ranks = {
+            "lastname": 0,
+            "surname": 1,
+            "familyname": 2,
+        }
+
+        if key_ in exact_ranks:
+            return exact_ranks[key_]
+        if "name" in key_:
+            return 11
+        return unrelated_key_rank
+
+    best_dob_key = sorted(kv_pairs, key=_rank_date_key)[0]
+    best_fn_key = sorted(kv_pairs, key=_rank_first_name_key)[0]
+    best_ln_key = sorted(kv_pairs, key=_rank_last_name_key)[0]
+
+    _logger.info(
+        "using form data keys '%s' for dob, '%s' for firstname, '%s' for lastname",
+        best_dob_key,
+        best_fn_key,
+        best_ln_key,
+    )
+
+    dob = _parse_dob(kv_pairs[best_dob_key])
+    fn = None
+    if _rank_first_name_key(best_fn_key) < unrelated_key_rank:
+        fn = kv_pairs[best_fn_key]
+    ln = None
+    if _rank_last_name_key(best_ln_key) < unrelated_key_rank:
+        ln = kv_pairs[best_ln_key]
+
+    if fn and fn == ln:
+        # assume fullname
+        if " " in fn:
+            split = fn.split(" ")
+            fn, ln = split[0], split[-1]
+        else:
+            ln = None
+
+    return ProcessedUserData(
+        firstname=_capitalise_name(fn),
+        lastname=_capitalise_name(ln),
+        date_of_birth=dob,
+    )
 
 
-def _capitalise_name(*names: str) -> Iterable[str]:
+def _capitalise_name(name: str | None) -> str | None:
     """
-    Capitalise a name, handling hyphens
-    e.g. "SMITH-JONES" -> "Smith-Jones".
+    If name is all lowercase or all uppercase, capitalise it, otherwise assumme
+    it's correctly capitalised already and return as is.
+
+    Handles hyphens and apostrophes, e.g.
+        "SMITH-JONES" -> "Smith-Jones"
+        "o'connor" -> "O'Connor"
     """
+
+    if not name or not (name.isupper() or name.islower()):
+        return name or None
 
     def cap(part: str) -> str:
-        if "-" in part:
-            return "-".join(cap(part) for part in part.split("-"))
-        return (part or "").capitalize()
+        for char in ["-", "'"]:
+            if char in part:
+                return char.join(cap(p) for p in part.split(char))
+        return part.capitalize()
 
-    return (cap(name) for name in names)
+    return cap(name)
 
 
-def _parse_name(extracted_data: dict) -> Iterable[str]:
+def _parse_name(extracted_data: dict) -> Iterable[str | None]:
     """
     Attempt to pick correct values for firstname and lastname from Textract results
     """
@@ -85,11 +186,11 @@ def _parse_name(extracted_data: dict) -> Iterable[str]:
     lastname: str = extracted_data.get("lastname", "")
 
     if not fullname or fullname == firstname or fullname == lastname:
-        return _capitalise_name(firstname, lastname)
+        return _capitalise_name(firstname), _capitalise_name(lastname)
 
     split = fullname.split(" ")
     fullname, lastname = split[0], split[-1]
-    return _capitalise_name(firstname, lastname)
+    return _capitalise_name(firstname), _capitalise_name(lastname)
 
 
 def _parse_dob(dob: str) -> date | None:
@@ -113,7 +214,7 @@ def _parse_dob(dob: str) -> date | None:
     return None
 
 
-def kvs(blocks: list) -> dict:
+def kvs(blocks: list) -> dict[str, str]:
     """Get form data key value pairs from Textract results."""
 
     # Build a map of block IDs to blocks for quick lookup

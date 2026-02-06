@@ -24,18 +24,15 @@ s3 = None  # lazy init s3 client
 
 
 class Response:
-    def __init__(self, file_ok: bool, reason: str = "", new_key: str = ""):
+    def __init__(
+        self, file_ok: bool, reason: str | None = None, new_key: str | None = None
+    ):
         self.file_ok = file_ok
         self.reason = reason
         self.new_key = new_key
 
     def as_dict(self):
-        result: dict = {"file_ok": self.file_ok}
-        if self.reason:
-            result["reason"] = self.reason
-        if self.new_key:
-            result["new_key"] = self.new_key
-        return result
+        return {"file_ok": self.file_ok, "reason": self.reason, "new_key": self.new_key}
 
 
 def lambda_handler(payload, context) -> dict:
@@ -115,7 +112,7 @@ def _check_file_type(bucket, key) -> Response:
 
 
 def _check_guard_duty_malware_tag(bucket, key) -> Response:
-    max_wait = 60  # seconds
+    max_wait = 15  # seconds
     malware_status = None
     try:
         while max_wait > -1:

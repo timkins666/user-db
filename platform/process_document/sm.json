@@ -5,18 +5,18 @@
         "Check object": {
             "Type": "Task",
             "Resource": "arn:aws:states:::lambda:invoke",
-            "ResultPath": "$.check",
-            "ResultSelector": {
-                "file_ok.$": "$.Payload.file_ok",
-                "reason.$": "$.Payload.reason",
-                "new_key.$": "$.Payload.new_key"
-            },
             "Parameters": {
                 "FunctionName": "arn:aws:lambda:eu-west-2:145485528601:function:userdb-object-checker:$LATEST",
                 "Payload": {
                     "bucket.$": "$.bucket",
                     "key.$": "$.key"
                 }
+            },
+            "ResultPath": "$.check",
+            "ResultSelector": {
+                "file_ok.$": "$.Payload.file_ok",
+                "reason.$": "$.Payload.reason",
+                "new_key.$": "$.Payload.new_key"
             },
             "Retry": [
                 {
@@ -32,20 +32,48 @@
                     "JitterStrategy": "FULL"
                 }
             ],
-            "Next": "Choice"
+            "Next": "FailIfFileNotOk"
         },
-        "Choice": {
+        "FailIfFileNotOk": {
             "Type": "Choice",
             "Choices": [
                 {
                     "Variable": "$.check.file_ok",
                     "BooleanEquals": true,
-                    "Next": "AnalyzeDocument"
+                    "Next": "WhichTextract"
                 }
             ],
             "Default": "Fail"
         },
-        "AnalyzeDocument": {
+        "WhichTextract": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Next": "AnalyzeDocument-FormsAndQueries",
+                    "Variable": "$.textract_mode",
+                    "StringEquals": "forms_and_queries"
+                }
+            ],
+            "Default": "AnalyzeDocument-FormsOnly"
+        },
+        "AnalyzeDocument-FormsOnly": {
+            "Type": "Task",
+            "Parameters": {
+                "Document": {
+                    "S3Object": {
+                        "Bucket.$": "$.bucket",
+                        "Name.$": "$.check.new_key"
+                    }
+                },
+                "FeatureTypes": [
+                    "FORMS"
+                ]
+            },
+            "Resource": "arn:aws:states:::aws-sdk:textract:analyzeDocument",
+            "ResultPath": "$.textractResult",
+            "Next": "SaveTextractResultToS3"
+        },
+        "AnalyzeDocument-FormsAndQueries": {
             "Type": "Task",
             "Parameters": {
                 "Document": {
@@ -81,9 +109,9 @@
             },
             "Resource": "arn:aws:states:::aws-sdk:textract:analyzeDocument",
             "ResultPath": "$.textractResult",
-            "Next": "SaveResultToS3"
+            "Next": "SaveTextractResultToS3"
         },
-        "SaveResultToS3": {
+        "SaveTextractResultToS3": {
             "Type": "Task",
             "Resource": "arn:aws:states:::aws-sdk:s3:putObject",
             "Parameters": {

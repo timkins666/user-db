@@ -102,3 +102,8 @@ class ProcessedUserData(SQLModel):
     firstname: str | None
     lastname: str | None
     date_of_birth: date | None
+
+    @staticmethod
+    def empty():
+        """Empty user data"""
+        return ProcessedUserData(firstname=None, lastname=None, date_of_birth=None)

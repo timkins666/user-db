@@ -51,10 +51,10 @@ def test_lambda_handler_malware(s3, malware_status: str, error_reason: str):
     assert len(keys) == 1
 
     if error_reason is None:
-        assert result == {"file_ok": True, "new_key": CLEAN_KEY}
+        assert result == {"file_ok": True, "new_key": CLEAN_KEY, "reason": None}
         assert keys[0]["Key"] == CLEAN_KEY
     else:
-        assert result == {"file_ok": False, "reason": error_reason}
+        assert result == {"file_ok": False, "new_key": None, "reason": error_reason}
         assert keys[0]["Key"] == RAW_KEY
 
 
@@ -84,10 +84,11 @@ def test_lambda_handler_filetype(s3, file_content: bytes, error_reason: str):
     result = lambda_function.lambda_handler(payload, context={})
 
     if error_reason is None:
-        assert result == {"file_ok": True, "new_key": CLEAN_KEY}
+        assert result == {"file_ok": True, "new_key": CLEAN_KEY, "reason": None}
     else:
         assert result == {
             "file_ok": False,
+            "new_key": None,
             "reason": error_reason,
         }
 
@@ -96,7 +97,7 @@ def test_file_not_found():
     payload = {"bucket": BUCKET, "key": RAW_KEY}
     result = lambda_function.lambda_handler(payload, context={})
 
-    assert result == {"file_ok": False, "reason": "file_not_found"}
+    assert result == {"file_ok": False, "new_key": None, "reason": "file_not_found"}
 
 
 def test_file_too_big(s3):
@@ -115,4 +116,4 @@ def test_file_too_big(s3):
     payload = {"bucket": BUCKET, "key": RAW_KEY}
     result = lambda_function.lambda_handler(payload, context={})
 
-    assert result == {"file_ok": False, "reason": "file_too_big"}
+    assert result == {"file_ok": False, "new_key": None, "reason": "file_too_big"}

@@ -68,7 +68,7 @@ export const CreateUserDialog = ({
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
       setUploadState({
         status: 'error',
-        message: 'Only txt, pdf, png, and jpg files are allowed',
+        message: `Only ${ALLOWED_FILE_EXTENSIONS.join(', ')} files are allowed`,
       });
       return;
     }
@@ -346,7 +346,8 @@ export const CreateUserDialog = ({
                 color="text.secondary"
                 sx={{ display: 'block', mt: 1 }}
               >
-                Accepted formats: txt, pdf, png, jpg. Max size: 5MB.
+                Accepted formats: {ALLOWED_FILE_EXTENSIONS.join(', ')}. Max
+                size: 5MB.
               </Typography>
             )}
           </Box>

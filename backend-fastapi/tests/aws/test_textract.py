@@ -43,6 +43,31 @@ class TestHandleResults:
                     "Id": "answer-2",
                     "Text": "Smith",
                 },
+                {
+                    "BlockType": "KEY_VALUE_SET",
+                    "Id": "key-1",
+                    "EntityTypes": ["KEY"],
+                    "Relationships": [
+                        {"Type": "CHILD", "Ids": ["word-1"]},
+                        {"Type": "VALUE", "Ids": ["value-1"]},
+                    ],
+                },
+                {
+                    "Id": "word-1",
+                    "BlockType": "WORD",
+                    "Text": "d.o.b.",
+                },
+                {
+                    "Id": "value-1",
+                    "BlockType": "KEY_VALUE_SET",
+                    "EntityTypes": ["VALUE"],
+                    "Relationships": [{"Type": "CHILD", "Ids": ["word-2"]}],
+                },
+                {
+                    "Id": "word-2",
+                    "BlockType": "WORD",
+                    "Text": "March 15th, 1990",
+                },
             ]
         }
 
@@ -51,6 +76,7 @@ class TestHandleResults:
         assert result.payload
         assert result.payload.firstname == "John"
         assert result.payload.lastname == "Smith"
+        assert result.payload.date_of_birth == date(1990, 3, 15)
 
 
 class TestQueryResults:
@@ -114,24 +140,23 @@ class TestCapitaliseName:
     @pytest.mark.parametrize(
         "input_name,expected",
         [
+            ("", None),
             ("smith", "Smith"),
             ("JONES", "Jones"),
-            ("o'connor", "O'connor"),
+            ("o'connor", "O'Connor"),
             ("smith-jones", "Smith-Jones"),
             ("SMITH-JONES", "Smith-Jones"),
             ("mc-donald", "Mc-Donald"),
-            ("", ""),
+            ("mc-Donald", "mc-Donald"),
+            ("Smith", "Smith"),
+            ("smIth", "smIth"),
+            ("sm3sh", "Sm3sh"),
         ],
     )
     def test_capitalise_name(self, input_name: str, expected: str):
         """Test _capitalise_name handles various name formats"""
-        result = list(textract._capitalise_name(input_name))
-        assert result[0] == expected
-
-    def test_capitalise_multiple_names(self):
-        """Test _capitalise_name handles multiple names"""
-        result = list(textract._capitalise_name("JOHN", "SMITH-JONES"))
-        assert result == ["John", "Smith-Jones"]
+        result = textract._capitalise_name(input_name)
+        assert result == expected
 
 
 class TestParseName:
@@ -176,8 +201,8 @@ class TestParseName:
         extracted_data = {}
 
         fn, ln = textract._parse_name(extracted_data)
-        assert fn == ""
-        assert ln == ""
+        assert fn is None
+        assert ln is None
 
     def test_parse_name_fullname_same_as_firstname(self):
         """Test when fullname equals firstname"""
@@ -360,3 +385,126 @@ class TestKvs:
 
         result = textract.kvs(blocks)
         assert not result
+
+
+class TestFormResults:
+    """Tests for form_results function"""
+
+    def test_form_results_with_exact_dob_key(self):
+        """Test form_results with exact 'dateofbirth' key"""
+        kv_pairs = {
+            "DateOfBirth": "15/03/1990",
+            "FirstName": "John",
+            "LastName": "SMITH",
+        }
+
+        result = textract.form_results(kv_pairs)
+        assert result.firstname == "John"
+        assert result.lastname == "Smith"
+        assert result.date_of_birth == date(1990, 3, 15)
+
+    def test_form_results_with_dob_key(self):
+        """Test form_results with 'dob' key"""
+        kv_pairs = {
+            "D.O.B.": "01/01/2000",
+            "GivenName": "jane",
+            "Surname": "doe",
+        }
+
+        result = textract.form_results(kv_pairs)
+        assert result.firstname == "Jane"
+        assert result.lastname == "Doe"
+        assert result.date_of_birth == date(2000, 1, 1)
+
+    def test_form_results_with_fuzzy_keys(self):
+        """Test form_results with less exact key matches"""
+        kv_pairs = {
+            "Birth Date": "25/12/1985",
+            "Name": "Alice",
+        }
+
+        result = textract.form_results(kv_pairs)
+        assert result.firstname == "Alice"
+        assert result.date_of_birth == date(1985, 12, 25)
+
+    def test_form_results_empty_dict(self):
+        """Test form_results with empty dictionary"""
+        kv_pairs = {}
+
+        result = textract.form_results(kv_pairs)
+        assert result.firstname is None
+        assert result.lastname is None
+        assert result.date_of_birth is None
+
+    def test_form_results_with_hyphenated_lastname(self):
+        """Test form_results with hyphenated last name"""
+        kv_pairs = {
+            "DateOfBirth": "10/05/1995",
+            "FirstName": "mary",
+            "FamilyName": "smith-jones",
+        }
+
+        result = textract.form_results(kv_pairs)
+        assert result.firstname == "Mary"
+        assert result.lastname == "Smith-Jones"
+        assert result.date_of_birth == date(1995, 5, 10)
+
+    def test_form_results_invalid_dob(self):
+        """Test form_results with invalid date of birth"""
+        kv_pairs = {
+            "DateOfBirth": "invalid date",
+            "FirstName": "Bob",
+        }
+
+        result = textract.form_results(kv_pairs)
+        assert result.firstname == "Bob"
+        assert result.date_of_birth is None
+
+    def test_form_results_prioritizes_better_key_matches(self):
+        """Test form_results chooses better-ranked keys when multiple exist"""
+        kv_pairs = {
+            "BirthDate": "20/08/1988",
+            "DOB": "15/03/1990",
+        }
+
+        result = textract.form_results(kv_pairs)
+        # Should pick DOB over BirthDate
+        assert result.date_of_birth == date(1990, 3, 15)
+
+    def test_form_results_ignores_poor_name_matches(self):
+        """Test form_results ignores keys that don't match name patterns"""
+        kv_pairs = {
+            "DOB": "15/03/1990",
+            "Address": "123 Main St",
+        }
+
+        result = textract.form_results(kv_pairs)
+        assert result.firstname is None
+        assert result.lastname is None
+        assert result.date_of_birth == date(1990, 3, 15)
+
+    def test_form_results_with_forename_key(self):
+        """Test form_results with 'forename' key variant"""
+        kv_pairs = {
+            "DOB": "05/11/1992",
+            "Forename": "Alice",
+            "FamilyName": "Johnson",
+        }
+
+        result = textract.form_results(kv_pairs)
+        assert result.firstname == "Alice"
+        assert result.lastname == "Johnson"
+        assert result.date_of_birth == date(1992, 11, 5)
+
+    def test_form_results_mixed_case_keys(self):
+        """Test form_results handles mixed case in keys"""
+        kv_pairs = {
+            "date of BIRTH": "12/06/1988",
+            "FIRSTNAME": "MIKE",
+            "lastname": "BROWN",
+        }
+
+        result = textract.form_results(kv_pairs)
+        assert result.firstname == "Mike"
+        assert result.lastname == "Brown"
+        assert result.date_of_birth == date(1988, 6, 12)
