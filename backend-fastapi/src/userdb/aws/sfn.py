@@ -28,8 +28,19 @@ async def process_document(object_key: str) -> SuccessResult[ProcessedUserData]:
     """Trigger a Step Functions state machine execution for the given S3 object key."""
 
     sfn = _client()
-
-    input_payload = {"bucket": os.environ["UPLOAD_BUCKET_NAME"], "key": object_key}
+    results_key = (
+        os.environ["CLEAN_PATH_PREFIX"]
+        + object_key.removeprefix(os.environ["UPLOAD_PATH_PREFIX"])
+        + RESULTS_SUFFIX
+    )
+    input_payload = {
+        "bucket": os.environ["UPLOAD_BUCKET_NAME"],
+        "key": object_key,
+        "results_key": results_key,
+        "textract_config": {
+            "feature_types": ["FORMS"],
+        },
+    }
 
     response = sfn.start_execution(
         stateMachineArn=os.environ.get("DOCUMENT_PROCESSING_SFN_ARN"),
@@ -48,11 +59,6 @@ async def process_document(object_key: str) -> SuccessResult[ProcessedUserData]:
     if status != "SUCCEEDED":
         return SuccessResult(success=False)
 
-    results_key = (
-        os.environ["CLEAN_PATH_PREFIX"]
-        + object_key.removeprefix(os.environ["UPLOAD_PATH_PREFIX"])
-        + RESULTS_SUFFIX
-    )
     textract_results = json.loads(
         s3.get_object(bucket=os.environ["UPLOAD_BUCKET_NAME"], key=results_key)
     )

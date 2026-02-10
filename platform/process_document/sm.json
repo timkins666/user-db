@@ -40,87 +40,56 @@
                 {
                     "Variable": "$.check.file_ok",
                     "BooleanEquals": true,
-                    "Next": "WhichTextract"
+                    "Next": "AnalyzeDocument"
                 }
             ],
             "Default": "Fail"
         },
-        "WhichTextract": {
+        "HandleTextractResult": {
             "Type": "Choice",
             "Choices": [
                 {
-                    "Next": "AnalyzeDocument-FormsAndQueries",
-                    "Variable": "$.textract_mode",
-                    "StringEquals": "forms_and_queries"
+                    "Next": "Success",
+                    "Variable": "$.textractResult.status",
+                    "StringEquals": "success"
                 }
             ],
-            "Default": "AnalyzeDocument-FormsOnly"
+            "Default": "Fail"
         },
-        "AnalyzeDocument-FormsOnly": {
-            "Type": "Task",
-            "Parameters": {
-                "Document": {
-                    "S3Object": {
-                        "Bucket.$": "$.bucket",
-                        "Name.$": "$.check.new_key"
-                    }
-                },
-                "FeatureTypes": [
-                    "FORMS"
-                ]
-            },
-            "Resource": "arn:aws:states:::aws-sdk:textract:analyzeDocument",
-            "ResultPath": "$.textractResult",
-            "Next": "SaveTextractResultToS3"
+        "Success": {
+            "Type": "Succeed"
         },
-        "AnalyzeDocument-FormsAndQueries": {
+        "AnalyzeDocument": {
             "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
             "Parameters": {
-                "Document": {
-                    "S3Object": {
-                        "Bucket.$": "$.bucket",
-                        "Name.$": "$.check.new_key"
-                    }
-                },
-                "FeatureTypes": [
-                    "FORMS",
-                    "QUERIES"
-                ],
-                "QueriesConfig": {
-                    "Queries": [
-                        {
-                            "Text": "what is the person's first name",
-                            "Alias": "firstname"
-                        },
-                        {
-                            "Text": "what is the person's last name",
-                            "Alias": "lastname"
-                        },
-                        {
-                            "Text": "what is the person's full name",
-                            "Alias": "fullname"
-                        },
-                        {
-                            "Text": "what is the person's date of birth",
-                            "Alias": "date_of_birth"
-                        }
-                    ]
+                "FunctionName": "arn:aws:lambda:eu-west-2:145485528601:function:userdb-textract-runner:$LATEST",
+                "Payload": {
+                    "bucket.$": "$.bucket",
+                    "key.$": "$.check.new_key",
+                    "textract_config.$": "$.textract_config",
+                    "results_key.$": "$.results_key"
                 }
             },
-            "Resource": "arn:aws:states:::aws-sdk:textract:analyzeDocument",
-            "ResultPath": "$.textractResult",
-            "Next": "SaveTextractResultToS3"
-        },
-        "SaveTextractResultToS3": {
-            "Type": "Task",
-            "Resource": "arn:aws:states:::aws-sdk:s3:putObject",
-            "Parameters": {
-                "Bucket.$": "$.bucket",
-                "Key.$": "States.Format('{}-analyzed.json', $.check.new_key)",
-                "Body.$": "$.textractResult",
-                "ContentType": "application/json"
+            "ResultSelector": {
+                "status.$": "$.Payload.status"
             },
-            "End": true
+            "ResultPath": "$.textractResult",
+            "Retry": [
+                {
+                    "ErrorEquals": [
+                        "Lambda.ServiceException",
+                        "Lambda.AWSLambdaException",
+                        "Lambda.SdkClientException",
+                        "Lambda.TooManyRequestsException"
+                    ],
+                    "IntervalSeconds": 1,
+                    "MaxAttempts": 3,
+                    "BackoffRate": 2,
+                    "JitterStrategy": "FULL"
+                }
+            ],
+            "Next": "HandleTextractResult"
         },
         "Fail": {
             "Type": "Fail"

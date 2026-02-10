@@ -70,4 +70,4 @@ async def process_document(
     except Exception as ex:  # pylint: disable=broad-exception-caught
         _logger.exception("Error processing document: %s", ex)
 
-    return SuccessResult(success=False).response(status_code=500)
+    return SuccessResult(success=False).response()

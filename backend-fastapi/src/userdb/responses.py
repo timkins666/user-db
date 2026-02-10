@@ -24,9 +24,12 @@ class SuccessResult(BaseModel, Generic[T]):
     success: bool
     payload: Optional[T] = None
 
-    def response(self, status_code=200):
+    def response(self, success_code=200, error_code=500):
         """Return a JSONResponse with the payload dumped to JSON."""
-        return JSONResponse(self.model_dump(mode="json"), status_code=status_code)
+        return JSONResponse(
+            self.model_dump(mode="json"),
+            status_code=success_code if self.success else error_code,
+        )
 
     def model_dump(self, **kwargs: Any) -> dict[str, Any]:
         """Dump model to dict, using aliases by default and recursing through nested models."""
