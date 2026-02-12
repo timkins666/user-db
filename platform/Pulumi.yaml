@@ -1,8 +1,3 @@
 name: userdb
 runtime: python
 description: Deploy userdb infra to AWS
-
-config:
-  aws:region:
-    description: AWS region to deploy to
-    value: eu-west-2

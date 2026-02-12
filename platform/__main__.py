@@ -9,7 +9,8 @@ import pulumi
 import pulumi_aws as aws
 
 from components import bucket, lambda_, sfn, iam
-from utils.config import CONFIG, DEFAULT_TAGS
+from resources import guard_duty
+from utils.config import ACCOUNT_ID, CONFIG, DEFAULT_TAGS
 from utils.utils import create_policy_doc
 
 from resources.process_document_sfn.definition import process_document_definition
@@ -17,8 +18,26 @@ from resources.process_document_sfn.definition import process_document_definitio
 PLATFORM_ROOT = Path(__file__).resolve().parent
 
 
-# Create S3 bucket for document storage
-documents_bucket = bucket.Bucket(name=CONFIG.get("bucketName", ""))
+# ============================================================================
+# Documents Bucket
+# ============================================================================
+documents_bucket = bucket.Bucket(
+    name=CONFIG.get("bucketName", ""),
+    cors_rules=[
+        aws.s3.BucketCorsConfigurationCorsRuleArgs(
+            allowed_headers=["*"],
+            allowed_methods=["PUT"],
+            allowed_origins=["http://localhost:5173"],
+            max_age_seconds=3000,
+        )
+    ],
+)
+
+# ============================================================================
+# Guard Duty Malware Scan Configuration
+# ============================================================================
+
+guard_duty.create_malware_scan_rule(documents_bucket)
 
 
 # ============================================================================
@@ -175,7 +194,7 @@ sfn_role = iam.Role(
                         "Action": [
                             "lambda:InvokeFunction",
                         ],
-                        "Resource": lambda_arns,
+                        "Resource": [f"{arn}:$LATEST" for arn in lambda_arns],
                     }
                 )
             ),

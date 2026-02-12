@@ -10,6 +10,7 @@ class Bucket(AwsComponent):
         self,
         name: str,
         versioning_enabled: bool = False,
+        cors_rules: Optional[list[aws.s3.BucketCorsConfigurationCorsRuleArgs]] = None,
         opts: Optional[pulumi.ResourceOptions] = None,
     ):
         super().__init__("userdb:infra:bucket", name)
@@ -41,6 +42,14 @@ class Bucket(AwsComponent):
                 versioning_configuration=aws.s3.BucketVersioningV2VersioningConfigurationArgs(
                     status="Enabled",
                 ),
+                opts=pulumi.ResourceOptions(parent=self),
+            )
+
+        if cors_rules:
+            self.bucket_cors = aws.s3.BucketCorsConfiguration(
+                f"{name}-cors",
+                bucket=self.bucket.id,
+                cors_rules=cors_rules,
                 opts=pulumi.ResourceOptions(parent=self),
             )
 
