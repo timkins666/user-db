@@ -1,11 +1,7 @@
 """document model classes"""
 
-import re
 from humps import camel
 from pydantic import BaseModel, Field
-
-
-NAME_ALLOWED_CHARS = re.compile(r"^[A-Za-zÀ-ÖØ-öø-ÿ- ]+$")
 
 
 class DocumentBase(BaseModel):

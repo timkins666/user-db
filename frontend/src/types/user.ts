@@ -24,7 +24,7 @@ export interface UserValidation {
 }
 
 export const validateNewUser = (userData: NewUser): UserValidation => {
-  const name_validator = /^[A-Za-zÀ-ÖØ-öø-ÿ- ]{1,100}$/;
+  const name_validator = /^['A-Za-zÀ-ÖØ-öø-ÿ- ]{1,100}$/;
   const results: UserValidation = { ok: true };
 
   if (!userData.firstname.match(name_validator)) {

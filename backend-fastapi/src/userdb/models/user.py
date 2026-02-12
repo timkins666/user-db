@@ -9,7 +9,7 @@ from sqlmodel import Field, SQLModel
 from pydantic import field_validator
 
 
-NAME_ALLOWED_CHARS = re.compile(r"^[A-Za-zÀ-ÖØ-öø-ÿ- ]+$")
+NAME_ALLOWED_CHARS = re.compile(r"^['A-Za-zÀ-ÖØ-öø-ÿ- ]+$")
 
 
 class UserBase(SQLModel):

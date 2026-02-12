@@ -33,4 +33,4 @@ sys.path = ["./backend-fastapi", "./backend-fastapi/src"] + sys.path
 '''
 
 [tool.pylint.messages_control]
-disable = ["too-few-public-methods", "wrong-import-order"]
+disable = ["too-few-public-methods", "wrong-import-order", "duplicate-code"]
