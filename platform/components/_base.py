@@ -3,19 +3,12 @@
 import pulumi
 import pulumi_aws as aws
 
-from utils.config import REGION
+from utils.config import REGION, DEFAULT_TAGS
 
 aws_provider = aws.Provider(
     "default",
     region=REGION,
-    default_tags=aws.ProviderDefaultTagsArgs(
-        tags={
-            "app": "userdb",
-            "Environment": pulumi.get_stack(),
-            "Project": "userdb",
-            "ManagedBy": "Pulumi",
-        }
-    ),
+    default_tags=aws.ProviderDefaultTagsArgs(tags=DEFAULT_TAGS),
 )
 
 

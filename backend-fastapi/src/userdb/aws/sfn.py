@@ -6,7 +6,7 @@ import json
 import boto3
 import os
 
-from userdb.aws import s3, textract
+from userdb.aws import s3, ssm, textract
 from userdb.models.user import ProcessedUserData
 from userdb.responses import SuccessResult
 from userdb.utils import log
@@ -34,7 +34,7 @@ async def process_document(object_key: str) -> SuccessResult[ProcessedUserData]:
         + RESULTS_SUFFIX
     )
     input_payload = {
-        "bucket": os.environ["UPLOAD_BUCKET_NAME"],
+        "bucket": ssm.get_parameter(ssm.Parameter.DOCUMENTS_BUCKET_NAME),
         "key": object_key,
         "results_key": results_key,
         "textract_config": {
@@ -43,7 +43,7 @@ async def process_document(object_key: str) -> SuccessResult[ProcessedUserData]:
     }
 
     response = sfn.start_execution(
-        stateMachineArn=os.environ.get("DOCUMENT_PROCESSING_SFN_ARN"),
+        stateMachineArn=ssm.get_parameter(ssm.Parameter.STEP_FUNCTION_ARN),
         input=json.dumps(input_payload),
     )
 
@@ -60,7 +60,10 @@ async def process_document(object_key: str) -> SuccessResult[ProcessedUserData]:
         return SuccessResult(success=False)
 
     textract_results = json.loads(
-        s3.get_object(bucket=os.environ["UPLOAD_BUCKET_NAME"], key=results_key)
+        s3.get_object(
+            bucket=ssm.get_parameter(ssm.Parameter.DOCUMENTS_BUCKET_NAME),
+            key=results_key,
+        )
     )
 
     return textract.handle_results(textract_results)

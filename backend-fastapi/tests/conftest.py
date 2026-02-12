@@ -8,7 +8,9 @@ import os
 import time
 from unittest import mock
 
+import boto3
 from fastapi.testclient import TestClient
+import moto
 import pytest
 from sqlmodel import Session, SQLModel, create_engine, delete
 from sqlmodel.pool import StaticPool
@@ -18,6 +20,13 @@ from userdb.db import get_session
 from userdb.main import app as fastapi_app
 from userdb.models.user import User
 from userdb import redis as redis_store
+
+
+@pytest.fixture(autouse=True)
+def auto_moto():
+    """Automatically apply moto mock to all tests using boto3"""
+    with moto.mock_aws():
+        yield
 
 
 @pytest.fixture(name="app", scope="session")
@@ -79,11 +88,9 @@ def _session():
 @dataclasses.dataclass(frozen=True, init=False)
 class MockEnv:
     # pylint: disable=invalid-name
-    UPLOAD_BUCKET_NAME: str = "test-bucket"
     UPLOAD_PATH_PREFIX: str = "test-uploads"
     CLEAN_PATH_PREFIX: str = "test-clean"
     AWS_REGION: str = "eu-west-1"
-    DOCUMENT_PROCESSING_SFN_ARN: str = "sf_arn"
 
 
 @pytest.fixture(autouse=True)
@@ -93,6 +100,38 @@ def default_env_vars():
         dataclasses.asdict(MockEnv()),
     ):
         yield
+
+
+@dataclasses.dataclass(frozen=True, init=False)
+class MockParameters:
+    documents_bucket_name: str = "test-bucket"
+    process_document_step_function_arn: str = "sf_arn"
+
+
+def get_boto_client(service: str):
+    """
+    Helper to get a boto3 client for tests,
+    verifies within moto context
+    """
+
+    account_id = boto3.client("sts").get_caller_identity().get("Account")
+    if account_id != "123456789012":
+        raise RuntimeError(
+            f"Unexpected AWS account ID {account_id}. "
+            "Ensure this test is running within moto context."
+        )
+
+    return boto3.client(service, region_name=MockEnv.AWS_REGION)
+
+
+@pytest.fixture(autouse=True)
+def default_parameters():
+    """Set default SSM parameters for tests"""
+    client = get_boto_client("ssm")
+    for name, value in dataclasses.asdict(MockParameters()).items():
+        client.put_parameter(
+            Name=f"/userdb/{name.replace('_', '-')}", Value=value, Type="String"
+        )
 
 
 @pytest.fixture(autouse=True, scope="session")

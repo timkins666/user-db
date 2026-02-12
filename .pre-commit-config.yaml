@@ -10,6 +10,11 @@ repos:
       - id: end-of-file-fixer
       - id: trailing-whitespace
       - id: mixed-line-ending
+  # pylint-reenable before black, so formats after removing lines
+  - repo: https://github.com/MarcoGorelli/pylint-reenable
+    rev: v0.1.4
+    hooks:
+      - id: pylint-reenable
   - repo: https://github.com/psf/black
     rev: 25.1.0
     hooks:
@@ -57,7 +62,3 @@ repos:
         language: system
         types: [python]
         args: [--ignore-paths=venv|platform]
-  - repo: https://github.com/MarcoGorelli/pylint-reenable
-    rev: v0.1.4
-    hooks:
-      - id: pylint-reenable

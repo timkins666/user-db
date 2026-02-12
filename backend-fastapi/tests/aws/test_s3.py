@@ -8,7 +8,6 @@ from unittest import mock
 import uuid
 
 import boto3
-import moto
 import pytest
 
 from userdb.aws import s3
@@ -64,7 +63,6 @@ def test_create_object_key(input_filename: str, s3_filename: str):
     )
 
 
-@moto.mock_aws()
 def test_get_object():
     """test get_object retrieves and decodes S3 object content"""
 

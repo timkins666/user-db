@@ -9,10 +9,10 @@ import pulumi
 import pulumi_aws as aws
 
 from components import bucket, lambda_, sfn, iam
-from utils.config import CONFIG
+from utils.config import CONFIG, DEFAULT_TAGS
 from utils.utils import create_policy_doc
 
-from process_document_sfn.definition import process_document_definition
+from resources.process_document_sfn.definition import process_document_definition
 
 PLATFORM_ROOT = Path(__file__).resolve().parent
 
@@ -80,7 +80,7 @@ object_check_lambda = lambda_.Lambda(
     role=object_check_role.arn,
     runtime="python3.11",
     handler="lambda_function.lambda_handler",
-    code=pulumi.FileArchive("./object_check_lambda/lambda-deployment.zip"),
+    code=pulumi.FileArchive("./resources/object_check_lambda/lambda-deployment.zip"),
     timeout=30,
     memory_size=256,
     environment=aws.lambda_.FunctionEnvironmentArgs(
@@ -134,7 +134,7 @@ textract_runner_lambda = lambda_.Lambda(
     role=textract_runner_role.arn,
     runtime="python3.11",
     handler="lambda_function.lambda_handler",
-    code=pulumi.FileArchive("./textract_runner/app"),
+    code=pulumi.FileArchive("./resources/textract_runner/app"),
     timeout=20,
     memory_size=256,
     environment=aws.lambda_.FunctionEnvironmentArgs(
@@ -192,6 +192,26 @@ process_document_sfn = sfn.StateMachine(
         "object_check_lambda_arn": object_check_lambda.arn,
         "textract_runner_lambda_arn": textract_runner_lambda.arn,
     },
+)
+
+# ============================================================================
+# Parameter Store Parameters
+# ============================================================================
+
+bucket_name_param = aws.ssm.Parameter(
+    "userdb-documents-bucket-name",
+    name="/userdb/documents-bucket-name",
+    type="String",
+    value=documents_bucket.name,
+    tags=DEFAULT_TAGS,
+)
+
+step_function_arn_param = aws.ssm.Parameter(
+    "userdb-process-document-step-function-arn",
+    name="/userdb/process-document-step-function-arn",
+    type="String",
+    value=process_document_sfn.arn,
+    tags=DEFAULT_TAGS,
 )
 
 # ============================================================================

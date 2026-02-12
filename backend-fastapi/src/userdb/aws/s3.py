@@ -6,6 +6,7 @@ import uuid
 import boto3
 import os
 
+from userdb.aws import ssm
 from userdb.models.document import DocumentPresignRequest
 from userdb.utils.auth import CurrentUser
 
@@ -48,10 +49,12 @@ def generate_presigned_upload_url(
     """Generate a presigned S3 upload URL for the given user."""
     upload_id = uuid.uuid4()
     object_key = _create_object_key(user, upload_id, file_info.filename)
+    bucket = ssm.get_parameter(ssm.Parameter.DOCUMENTS_BUCKET_NAME)
+
     presigned_url = _client().generate_presigned_url(
         ClientMethod="put_object",
         Params={
-            "Bucket": os.environ["UPLOAD_BUCKET_NAME"],
+            "Bucket": bucket,
             "Key": object_key,
             "ContentType": file_info.content_type,
         },
