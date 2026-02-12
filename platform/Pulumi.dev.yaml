@@ -1,0 +1,4 @@
+config:
+  aws:region: eu-west-2
+  userdb:bucketName: timmy-userdb-documents
+encryptionsalt: v1:kWH+Ml2RKcc=:v1:iobUzbyUSn9GMiRD:CmkFbXwvDpQ92WbMnnhJdfWW+e0bug==

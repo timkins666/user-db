@@ -30,6 +30,11 @@ echo ""
 echo "✅ Lambda package created: $ZIP_FILE"
 echo "Size: $(du -h "$ZIP_FILE" | cut -f1)"
 echo ""
-echo "Deploying..."
 
+if [ "${1:-}" != "-d" ]; then
+    echo "Package ready for deployment. Run with -d flag to deploy to AWS."
+    exit 0
+fi
+
+echo "Deploying..."
 aws lambda update-function-code --function-name userdb-object-checker --zip-file "fileb://$ZIP_FILE"

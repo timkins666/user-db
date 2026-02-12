@@ -1,0 +1,10 @@
+# Pulumi
+.pulumi/
+Pulumi.*.yaml
+!Pulumi.dev.yaml
+venv/
+__pycache__/
+
+# Lambda deployment packages
+*.zip
+object_check_lambda/package/

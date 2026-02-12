@@ -1,0 +1,102 @@
+import json
+
+
+def process_document_definition(
+    *, object_check_lambda_arn: str, textract_runner_lambda_arn: str
+) -> str:
+    """Returns the definition for the process document step function,
+    with the provided ARNs for the object checker and Textract runner lambdas."""
+
+    return json.dumps(
+        {
+            "Comment": "State machine to check and process uploaded documents",
+            "StartAt": "Check object",
+            "States": {
+                "Check object": {
+                    "Type": "Task",
+                    "Resource": "arn:aws:states:::lambda:invoke",
+                    "Parameters": {
+                        "FunctionName": f"{object_check_lambda_arn}:$LATEST",
+                        "Payload": {"bucket.$": "$.bucket", "key.$": "$.key"},
+                    },
+                    "ResultPath": "$.check",
+                    "ResultSelector": {
+                        "file_ok.$": "$.Payload.file_ok",
+                        "reason.$": "$.Payload.reason",
+                        "new_key.$": "$.Payload.new_key",
+                    },
+                    "Retry": [
+                        {
+                            "ErrorEquals": [
+                                "Lambda.ServiceException",
+                                "Lambda.AWSLambdaException",
+                                "Lambda.SdkClientException",
+                                "Lambda.TooManyRequestsException",
+                            ],
+                            "IntervalSeconds": 1,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2,
+                            "JitterStrategy": "FULL",
+                        }
+                    ],
+                    "Next": "FailIfFileNotOk",
+                },
+                "FailIfFileNotOk": {
+                    "Type": "Choice",
+                    "Choices": [
+                        {
+                            "Variable": "$.check.file_ok",
+                            "BooleanEquals": True,
+                            "Next": "AnalyzeDocument",
+                        }
+                    ],
+                    "Default": "Fail",
+                },
+                "HandleTextractResult": {
+                    "Type": "Choice",
+                    "Choices": [
+                        {
+                            "Next": "Success",
+                            "Variable": "$.textractResult.status",
+                            "StringEquals": "success",
+                        }
+                    ],
+                    "Default": "Fail",
+                },
+                "Success": {"Type": "Succeed"},
+                "AnalyzeDocument": {
+                    "Type": "Task",
+                    "Resource": "arn:aws:states:::lambda:invoke",
+                    "Parameters": {
+                        "FunctionName": f"{textract_runner_lambda_arn}:$LATEST",
+                        "Payload": {
+                            "bucket.$": "$.bucket",
+                            "key.$": "$.check.new_key",
+                            "textract_config.$": "$.textract_config",
+                            "results_key.$": "$.results_key",
+                        },
+                    },
+                    "ResultSelector": {"status.$": "$.Payload.status"},
+                    "ResultPath": "$.textractResult",
+                    "Retry": [
+                        {
+                            "ErrorEquals": [
+                                "Lambda.ServiceException",
+                                "Lambda.AWSLambdaException",
+                                "Lambda.SdkClientException",
+                                "Lambda.TooManyRequestsException",
+                            ],
+                            "IntervalSeconds": 1,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2,
+                            "JitterStrategy": "FULL",
+                        }
+                    ],
+                    "Next": "HandleTextractResult",
+                },
+                "Fail": {"Type": "Fail"},
+            },
+            "QueryLanguage": "JSONPath",
+            "TimeoutSeconds": 180,
+        }
+    )
